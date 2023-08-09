@@ -83,7 +83,6 @@ def get_read_pairs(normal_dna, tumor_dna, tumor_rna):
                         number = parts[2].strip()
                         print(os.path.basename(os.path.normpath(file_path)), "Mapped Read Duplication Rate:", number)
                         read_pairs_report_string += os.path.basename(os.path.normpath(file_path)) + " Mapped Read Duplication Rate: " + number + "\n"
-        
     return read_pairs_report_string
 
 
