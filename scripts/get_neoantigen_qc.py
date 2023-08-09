@@ -5,15 +5,12 @@ import sys
 
 # Notes
 """
-Tested for JLF trials -- wdl sometimes in different place
-Tested for CTEP -- wdl/fianl variants work too
-Tested for Leidos -- wdl/fianl variants work too
+A script to generate the Basic data QC for Genomic Review Reports
+This script works with various trials and 
+includes optional argument flags in case of werid naming conventions.
 
-Use:
-provide Trial name, then sample name folder, wdl name
-
-ex: $ python3 get_neoantigen_qc.py CTEP TWJF-10146-MO011-0024 10146-MO011-0024_immuno_cloud-WDL.yaml
-
+Author: Evelyn Schmidt
+Date: August 2023
 """
 
 
