@@ -9,7 +9,7 @@
 ## Get FDA Thresholds
 
 - List of parameters
-```bash
+```
 python3 /opt/scripts/get_FDA_thresholds.py --help
 usage: get_FDA_thresholds.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--una_n_dna UNA_N_DNA] [--una_t_dna UNA_T_DNA] [--una_t_rna UNA_T_RNA] [--somalier SOMALIER] [--contam_n CONTAM_N] [--contam_t CONTAM_T]
 
@@ -33,10 +33,11 @@ optional arguments:
   --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
   --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor sample
   ```
+### Example Commands
 
 ## Get Neoanitgen QC
 
-```bash
+```
 python3 /opt/scripts/get_neoantigen_qc.py --help
 usage: get_neoantigen_qc.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--concordance CONCORDANCE] [--contam_n CONTAM_N] [--contam_t CONTAM_T] [--rna_metrics RNA_METRICS] [--strand_check STRAND_CHECK] --yaml YAML
                             [--fin_variants FIN_VARIANTS]
@@ -62,6 +63,7 @@ optional arguments:
 
 ```
 
+### Example Commands
 ```bash
 python3 /opt/scripts/get_neoantigen_qc.py -WB /path/to/mcdb048/gcp_immuno -f final_results_v1 --yaml /path/to/gcp_immuno/final_results_v1/workflow_artifacts/mcdb048_immuno_cloud-WDL.yaml
 ```
