@@ -33,3 +33,39 @@ optional arguments:
   --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
   --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor sample
   ```
+
+## Get Neoanitgen QC
+
+```bash
+python3 /opt/scripts/get_neoantigen_qc.py --help
+usage: get_neoantigen_qc.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--concordance CONCORDANCE] [--contam_n CONTAM_N] [--contam_t CONTAM_T] [--rna_metrics RNA_METRICS] [--strand_check STRAND_CHECK] --yaml YAML
+                            [--fin_variants FIN_VARIANTS]
+
+Get the stats for the basic data QC review in the neoantigen final report.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
+  -f FIN_RESULTS, --fin_results FIN_RESULTS
+                        Name of the final results folder in gcp immuno
+  --n_dna N_DNA         file path for aligned normal dna FDA report table
+  --t_dna T_DNA         file path for aligned tumor dna FDA report table
+  --t_rna T_RNA         file path for aligned tumor rna FDA report table
+  --concordance CONCORDANCE
+                        file path for Somalier results for sample tumor/normal sample relatedness
+  --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
+  --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor sample
+  --rna_metrics RNA_METRICS
+  --strand_check STRAND_CHECK
+  --yaml YAML
+  --fin_variants FIN_VARIANTS
+
+```
+
+```bash
+python3 /opt/scripts/get_neoantigen_qc.py -WB /path/to/mcdb048/gcp_immuno -f final_results_v1 --yaml /path/to/gcp_immuno/final_results_v1/workflow_artifacts/mcdb048_immuno_cloud-WDL.yaml
+```
+
+```bash
+python3 /opt/scripts/get_neoantigen_qc.py --n_dna aligned_normal_dna_table2.csv --t_dna aligned_tumor_dna_table2.csv --t_rna aligned_tumor_rna_table3.csv --concordance concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM --rna_metrics rna_metrics.txt --strand_check trimmed_read_1strandness_check.txt --yaml jlf-100-044_immuno_cloud-WDL.yaml --fin_variants variants.final.annotated.tsv 
+```
