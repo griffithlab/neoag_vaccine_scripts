@@ -34,6 +34,13 @@ optional arguments:
   --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor sample
   ```
 ### Example Commands
+```bash
+python3 get_FDA_thresholds.py -WB /storage1/fs1/mgriffit/Active/JLF_MCDB/cases/JLF-100-042/gcp_immuno -f final_results_v1
+```
+
+```bash
+python3 get_FDA_thresholds.py --n_dna aligned_normal_dna_table2.csv --t_dna aligned_tumor_dna_table2.csv --t_rna aligned_tumor_rna_table3.csv --una_n_dna unaligned_normal_dna_table1.csv --una_t_dna unaligned_tumor_dna_table1.csv --una_t_rna unaligned_tumor_rna_table1.csv --somalier concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM
+```
 
 ## Get Neoanitgen QC
 
