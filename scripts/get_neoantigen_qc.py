@@ -67,25 +67,22 @@ def parse_arguments():
     # Parse command line arugments
     parser = argparse.ArgumentParser(description='Process some integers.')
 
-    # The required arguments
-    parser.add_argument('trial', metavar='T',
-                        help='the trial this case is under')
-    parser.add_argument('sample_name', metavar='samp',
-                        help='the name of the sample')
+    parser.add_argument('-WB',
+                        help='the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt')
 
     # The name of the final results folder 
     parser.add_argument('-f', "--fin_results", help="Name of the final results folder in gcp immuno")
 
     # Allows user to specify direct path to every file in case of werid naming convention
-    parser.add_argument("--n_dna", help="file path for aligned normal dna FDA report table", action="store_true")
-    parser.add_argument("--t_dna", help="file path for aligned tumor dna FDA report table", action="store_true")
-    parser.add_argument("--t_rna", help="file path for aligned tumor rna FDA report table", action="store_true")
-    parser.add_argument("--una_n_dna", help="file path for unaligned normal dna FDA report table", action="store_true")
-    parser.add_argument("--una_t_dna", help="file path for unaligned tumor dna FDA report table", action="store_true")
-    parser.add_argument("--una_t_rna", help="file path for unaligned tumor rna FDA report table", action="store_true")
-    parser.add_argument("--somalier", help="file path for Somalier results for sample tumor/normal sample relatedness", action="store_true")
-    parser.add_argument("--contam_n", help="file path for VerifyBamID results for contamination the normal sample", action="store_true")
-    parser.add_argument("--contam_t", help="file path for VerifyBamID results for contamination the tumor sample", action="store_true")
+    parser.add_argument("--n_dna", help="file path for aligned normal dna FDA report table")
+    parser.add_argument("--t_dna", help="file path for aligned tumor dna FDA report table")
+    parser.add_argument("--t_rna", help="file path for aligned tumor rna FDA report table")
+    parser.add_argument("--una_n_dna", help="file path for unaligned normal dna FDA report table")
+    parser.add_argument("--una_t_dna", help="file path for unaligned tumor dna FDA report table")
+    parser.add_argument("--una_t_rna", help="file path for unaligned tumor rna FDA report table")
+    parser.add_argument("--somalier", help="file path for Somalier results for sample tumor/normal sample relatedness")
+    parser.add_argument("--contam_n", help="file path for VerifyBamID results for contamination the normal sample")
+    parser.add_argument("--contam_t", help="file path for VerifyBamID results for contamination the tumor sample")
 
     return(parser.parse_args())
 
