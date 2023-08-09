@@ -26,7 +26,7 @@ python3 get_FDA_thresholds.py --n_dna aligned_normal_dna_table2.csv --t_dna alig
 # Future impovements: require the user to enter either the WB OR the list of files
 def parse_arguments():
     # Parse command line arugments
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Get FDA qc stats from various files and determine if they pass or fail.')
 
     parser.add_argument('-WB',
                         help='the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt')
@@ -365,6 +365,7 @@ def main():
 
     qc = qc.sort_values('Criteria', ignore_index=True)
 
+    
     if args.WB:
         qc.to_csv(args.WB + final_result + '/qc/fda_quality_thresholds_report.tsv', sep="\t", index=False)
     else:

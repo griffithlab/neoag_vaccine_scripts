@@ -45,19 +45,6 @@ else:
 wdl_file = argv[2]
 
 
-# Paths for various files needed
-normal_dna = root_path + sample_name + '/gcp_immuno/final_results/qc/fda_metrics/aligned_normal_dna/table_metrics/normal_dna_aligned_metrics.txt'
-tumor_dna = root_path + sample_name + '/gcp_immuno/final_results/qc/fda_metrics/aligned_tumor_dna/table_metrics/tumor_dna_aligned_metrics.txt'
-tumor_rna = root_path + sample_name + '/gcp_immuno/final_results/qc/fda_metrics/aligned_tumor_rna/table_metrics/tumor_rna_aligned_metrics.txt'
-somalier = root_path + sample_name + '/gcp_immuno/final_results/qc/concordance/concordance.somalier.pairs.tsv'
-contamination_normal = root_path + sample_name + '/gcp_immuno/final_results/qc/normal_dna/normal.VerifyBamId.selfSM'
-contamination_tumor = root_path + sample_name + '/gcp_immuno/final_results/qc/tumor_dna/tumor.VerifyBamId.selfSM'
-rna_metrics = root_path + sample_name + '/gcp_immuno/final_results/qc/tumor_rna/rna_metrics.txt'
-strandness_check = root_path + sample_name + "/gcp_immuno/final_results/qc/tumor_rna/trimmed_read_1strandness_check.txt"
-#sometimes it is in the yamls folder -- bot seems fine with the new samples
-# just supply WDL path/name??
-yaml_file = root_path + sample_name + '/gcp_immuno/final_results/workflow_artifacts/' + wdl_file
-final_variants = root_path + sample_name + "/gcp_immuno/final_results/variants.final.annotated.tsv"
 
 
 # ---- PARSE ARGUMENTS -------------------------------------------------------
@@ -65,7 +52,7 @@ final_variants = root_path + sample_name + "/gcp_immuno/final_results/variants.f
 # Enables user help
 def parse_arguments():
     # Parse command line arugments
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Get the stats for the basic data QC review in the neoantigen final report.')
 
     parser.add_argument('-WB',
                         help='the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt')
@@ -77,19 +64,24 @@ def parse_arguments():
     parser.add_argument("--n_dna", help="file path for aligned normal dna FDA report table")
     parser.add_argument("--t_dna", help="file path for aligned tumor dna FDA report table")
     parser.add_argument("--t_rna", help="file path for aligned tumor rna FDA report table")
-    parser.add_argument("--una_n_dna", help="file path for unaligned normal dna FDA report table")
-    parser.add_argument("--una_t_dna", help="file path for unaligned tumor dna FDA report table")
-    parser.add_argument("--una_t_rna", help="file path for unaligned tumor rna FDA report table")
     parser.add_argument("--somalier", help="file path for Somalier results for sample tumor/normal sample relatedness")
     parser.add_argument("--contam_n", help="file path for VerifyBamID results for contamination the normal sample")
     parser.add_argument("--contam_t", help="file path for VerifyBamID results for contamination the tumor sample")
+    parser.add_argument("--rna_metrics", help="")
+    parser.add_argument("--strand_check", help="")
+    parser.add_argument("--yaml", help="")
+    parser.add_argument("--fin_variants", help="")
+
+
 
     return(parser.parse_args())
 
-
-# 1. Gets total number of uniquely mapping reads and duplication rate 
-
-def get_read_pairs():
+# ---- TOTAL NUMBER OF UNIQELY MAPPING READS and DUPLICATION -----------------
+# Summarize total number of uniquely mapping reads generated for Tumor/Normal 
+# exome and Tumor RNA-seq (i.e. not counting duplicates that arise from PCR 
+# amplification of the same source DNA fragment).
+# Summarize duplication rates for tumor/normal DNA samples
+def get_read_pairs(normal_dna, tumor_dna, tumor_rna):
 
     read_pairs_report_string = ""
 
@@ -124,9 +116,9 @@ def get_read_pairs():
     return read_pairs_report_string
 
 
-
-# 2. Sample Relatedness
-def get_relatedness():
+# ---- SAMPLE RELATEDNESS ----------------------------------------------------
+# Check Somalier results for sample tumor/normal sample relatedness
+def get_relatedness(somalier):
     # Open the TSV file
     with open(somalier, 'r') as file:
         # Create a TSV reader object
@@ -144,9 +136,9 @@ def get_relatedness():
 
 
 
-
-# 3. Contamination of tumor and normal samples
-def get_contaimination():
+# ---- CONTAMINATION ---------------------------------------------------------
+# Check VerifyBamID results for contamination of both tumor and normal samples
+def get_contaimination(contamination_normal, contamination_tumor):
     contamination_str = ""
 
     file_paths = [contamination_normal, contamination_tumor]
@@ -168,10 +160,9 @@ def get_contaimination():
     return contamination_str
 
 
-
-# 4. RNA-seq metrics for % reads aligning to transcripts
-
-def get_rna_alignment():
+# ---- PERCENT READS ALIGNING TO TRANSCRIPTS ---------------------------------
+# Check RNA-seq metrics for % reads aligning to transcripts
+def get_rna_alignment(rna_metrics):
     # Open the file
     with open(rna_metrics, 'r') as file:
 
@@ -211,9 +202,9 @@ def get_rna_alignment():
         pct_utr_bases + ")" + "\n")
 
 
-# 5.  strand check
-
-def check_strand():
+# ---- STRAND CHECK ----------------------------------------------------------
+# Check that the correct RNA strand setting was used in the pipeline YAML file
+def check_strand(strandness_check, yaml_file):
 
     strand_str = ""
 
@@ -240,7 +231,16 @@ def check_strand():
     
     return strand_str
 
-def get_variant_count():
+# ---- TOTAL VARIANTS---------------------------------------------------------
+# Summarize total variants called and total neoantigen variants called 
+# (i.e. the subset of variants that could lead to neoantigens).  
+# Briefly, total variants is how many somatic mutations were detected 
+# in the tumor. Total neoantigen variants is the subset of these that 
+# lead to possible neoantigen candidates (i.e. those that cause protein 
+# coding changes in known genes). Note that the number of neoantigen 
+# candidates selected by the Immunotherapy Tumor Board will be a small 
+# subset of this number.
+def get_variant_count(final_variants):
     with open(final_variants, 'r') as fp:
         lines = len(fp.readlines())
         print('Total Number of somatic variants called:', lines-1)
@@ -253,12 +253,66 @@ def main():
     # create a text file to store results
     qc_file = open(root_path + sample_name + '/gcp_immuno/final_results/qc_file.txt', 'w')
 
-    qc_file.write(get_read_pairs())
-    qc_file.write(get_relatedness())
-    qc_file.write(get_contaimination())
-    qc_file.write(get_rna_alignment())
-    qc_file.write(check_strand())
-    qc_file.write(get_variant_count())
+    args = parse_arguments()
+
+    if args.fin_results:
+        final_result = '/' + args.fin_results
+    else:
+        final_result = "/final_results"
+
+
+    # Paths for various files needed
+    if args.n_dna:
+        normal_dna = args.n_dna
+    else:
+        normal_dna = args.WB + final_result +  '/qc/fda_metrics/aligned_normal_dna/table_metrics/normal_dna_aligned_metrics.txt'
+    if args.t_dna:
+        tumor_dna = args.t_dna
+    else:
+        tumor_dna = args.WB + final_result + '/qc/fda_metrics/aligned_tumor_dna/table_metrics/tumor_dna_aligned_metrics.txt'
+    if args.t_rna:
+        tumor_rna = args.t_rna
+    else:
+        tumor_rna = args.WB + final_result + '/qc/fda_metrics/aligned_tumor_rna/table_metrics/tumor_rna_aligned_metrics.txt'
+    if args.somalier:
+        somalier = args.somalier
+    else:
+        somalier = args.WB + final_result +  '/qc/concordance/concordance.somalier.pairs.tsv'
+    if args.contam_n:
+        contamination_normal = args.contam_n
+    else:
+        contamination_normal = args.WB + final_result + '/qc/normal_dna/normal.VerifyBamId.selfSM'
+    if args.contam_t:
+        contamination_tumor = args.contam_t
+    else:
+        contamination_tumor = args.WB + final_result + '/qc/tumor_dna/tumor.VerifyBamId.selfSM'
+    if args.rna_metrics:
+        rna_metrics = args.rna_metrics
+    else:
+        rna_metrics = args.WB + final_result + '/qc/tumor_rna/rna_metrics.txt'
+    if args.strand_check:
+        strandness_check = args.strand_check
+    else:
+        strandness_check = args.WB + final_result + '/qc/tumor_rna/trimmed_read_1strandness_check.txt'
+    if args.yaml:
+        yaml_file = args.yaml
+    else:
+        yaml_file = args.WB + final_result + 'workflow_artifacts/*.yaml' 
+    if args.final_variants:
+        final_variants = args.final_variants
+    else:
+        final_variants = args.WB + final_result + '/variants.final.annotated.tsv'
+
+
+
+
+    
+    qc_file.write(get_read_pairs(normal_dna, tumor_dna, tumor_rna))
+    qc_file.write(get_relatedness(somalier))
+    qc_file.write(get_contaimination(contamination_normal, contamination_tumor))
+    qc_file.write(get_rna_alignment(rna_metrics))
+    qc_file.write(check_strand(strandness_check,  yaml_file))
+    qc_file.write(get_variant_count(final_variants))
 
 
 
