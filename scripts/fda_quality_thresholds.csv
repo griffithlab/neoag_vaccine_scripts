@@ -1,0 +1,18 @@
+﻿Criteria,Threshold for pass/failure
+TOTAL_READS (tumor DNA),>250M
+TOTAL_READS (normal DNA),>100M
+TOTAL_READS (tumor RNA),>200M
+PCT_PF_READS_ALIGNED (tumor/normal DNA),>95%
+PCT_PF_READS_ALIGNED (tumor RNA),>85%
+PCT_USABLE_BASES_ON_TARGET  (tumor/normal DNA),>20%
+PCT_EXC_OFF_TARGET  (tumor/normal DNA),<60%
+PERCENT_DUPLICATION  (tumor/normal DNA),<40%
+MEAN_TARGET_COVERAGE (tumor DNA),>250x
+MEAN_TARGET_COVERAGE (normal DNA),>100x
+PCT_TARGET_BASES_20X  (tumor/normal DNA),>95%
+PCT_READS_ALIGNED_IN_PAIRS  (tumor/normal DNA),>95%
+MEAN_INSERT_SIZE (tumor/normal DNA),125 - 300bp
+PF_MISMATCH_RATE_1 (tumor/normal DNA),<0.75%
+PF_MISMATCH_RATE_2 (tumor/normal DNA),<1.00%
+Genotype Concordance (tumor/normal DNA),>95%
+Contamination Estimate (tumor/normal DNA),<7.5%
