@@ -10,18 +10,22 @@ from bs4 import BeautifulSoup
 # loop through all rows in peptides 51 mer
 # try to bold all class II peptides
 
+'''
+Use: 
+python3 scripts/bold_classII.py -p /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/10146-0021 Peptides 51-mer.xlsx -classI /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classI.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -classII /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classII.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -o /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/test_colored_peptide.html
+'''
 def parse_arguments():
     # Parse command line arugments
-    parser = argparse.ArgumentParser(description='Create the file needed for the neoantigen manuel review')
+    parser = argparse.ArgumentParser(description='Bold the class II pepetides')
 
     parser.add_argument('-p',
-                        help='The path to the Peptides 51 mer')
+                        help='The path to the Peptides 51 mer', required=True)
     parser.add_argument('-classI',
-                        help='The path to the classI all_epitopes.aggregated.tsv used in pVACseq')
+                        help='The path to the classI all_epitopes.aggregated.tsv used in pVACseq', required=True)
     parser.add_argument('-classII',
-                        help='The path to the classII all_epitopes.aggregated.tsv used in pVACseq')
+                        help='The path to the classII all_epitopes.aggregated.tsv used in pVACseq', required=True)
 
-    parser.add_argument('-o', "--out", help="Output location")
+    parser.add_argument('-o', help="Output location", required=True)
 
     return(parser.parse_args())
 
