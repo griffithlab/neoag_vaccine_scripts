@@ -113,7 +113,7 @@ options:
   -p P              The path to the Peptides 51 mer
   -classI CLASSI    The path to the classI all_epitopes.aggregated.tsv used in pVACseq
   -classII CLASSII  The path to the classII all_epitopes.aggregated.tsv used in pVACseq
-  -o O              Output location
+  -o O              Output location for the html doc
 ```
 
 ```bash
