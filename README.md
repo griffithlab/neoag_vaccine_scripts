@@ -35,11 +35,11 @@ optional arguments:
   ```
 ### Example Commands
 ```bash
-python3 get_FDA_thresholds.py -WB /storage1/fs1/mgriffit/Active/JLF_MCDB/cases/JLF-100-042/gcp_immuno -f final_results_v1
+python3 /opt/scripts/get_FDA_thresholds.py -WB /storage1/fs1/mgriffit/Active/JLF_MCDB/cases/JLF-100-042/gcp_immuno -f final_results_v1
 ```
 
 ```bash
-python3 get_FDA_thresholds.py --n_dna aligned_normal_dna_table2.csv --t_dna aligned_tumor_dna_table2.csv --t_rna aligned_tumor_rna_table3.csv --una_n_dna unaligned_normal_dna_table1.csv --una_t_dna unaligned_tumor_dna_table1.csv --una_t_rna unaligned_tumor_rna_table1.csv --somalier concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM
+python3 /opt/scripts/get_FDA_thresholds.py --n_dna aligned_normal_dna_table2.csv --t_dna aligned_tumor_dna_table2.csv --t_rna aligned_tumor_rna_table3.csv --una_n_dna unaligned_normal_dna_table1.csv --una_t_dna unaligned_tumor_dna_table1.csv --una_t_rna unaligned_tumor_rna_table1.csv --somalier concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM
 ```
 
 ## Get Neoanitgen QC
@@ -77,4 +77,45 @@ python3 /opt/scripts/get_neoantigen_qc.py -WB /path/to/mcdb048/gcp_immuno -f fin
 
 ```bash
 python3 /opt/scripts/get_neoantigen_qc.py --n_dna normal_dna_aligned_metrics.txt --t_dna tumor_dna_aligned_metrics.txt --t_rna tumor_rna_aligned_metrics.txt --concordance concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM --rna_metrics rna_metrics.txt --strand_check trimmed_read_1strandness_check.txt --yaml jlf-100-044_immuno_cloud-WDL.yaml --fin_variants variants.final.annotated.tsv
+```
+
+## Generate Review Files
+
+```
+python3 /opt/scripts/generate_reviews_files.py --help
+usage: generate_reviews_files.py [-h] [-a A] [-c C] [-samp SAMP] [-f FIN_RESULTS]
+
+Create the file needed for the neoantigen manuel review
+
+options:
+  -h, --help            show this help message and exit
+  -a A                  The path to the ITB Reviewed Candidates
+  -c C                  The path to annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv from the generate_protein_fasta script
+  -samp SAMP            The name of the sample
+  -f FIN_RESULTS, --fin_results FIN_RESULTS
+                        Name of the final results folder in gcp immuno
+```
+
+```bash
+python3 /opt/scripts/generate_reviews_files.py -a /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/itb-review-files/10146-0021.Annotated.Neoantigen_Candidates.xlsx -c /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp 10146-0021
+```
+
+## Bold ClassII
+
+```
+python3 /opt/scripts/bold_classII.py --help
+usage: bold_classII.py [-h] -p P -classI CLASSI -classII CLASSII -o O
+
+Bold the class II pepetides
+
+options:
+  -h, --help        show this help message and exit
+  -p P              The path to the Peptides 51 mer
+  -classI CLASSI    The path to the classI all_epitopes.aggregated.tsv used in pVACseq
+  -classII CLASSII  The path to the classII all_epitopes.aggregated.tsv used in pVACseq
+  -o O              Output location for the html doc
+```
+
+```bash
+python3 /opt/scripts/bold_classII.py -p /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/10146-0021 Peptides 51-mer.xlsx -classI /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classI.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -classII /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classII.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -o /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/test_colored_peptide.html
 ```
