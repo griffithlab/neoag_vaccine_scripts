@@ -66,9 +66,8 @@ def main():
 
     peptides = peptides[["ID", "CANDIDATE NEOANTIGEN", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES", 
                            "RESTRICTING HLA ALLELE", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)", "Comments"]]
-    print(peptides)
 
-    Peptide_file_name = args.samp + " Peptides 51-mer.xlsx"
+    Peptide_file_name = args.samp + "_Peptides_51-mer.xlsx"
     peptides.to_excel(Peptide_file_name, index=False)
 
     Neoantigen_Canidates_file_name = args.samp + ".Annotated.Neoantigen_Candidates.xlsx"
