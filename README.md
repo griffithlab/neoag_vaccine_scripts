@@ -99,7 +99,24 @@ options:
 ```bash
 python3 /opt/scripts/generate_reviews_files.py -a /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/itb-review-files/10146-0021.Annotated.Neoantigen_Candidates.xlsx -c /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp 10146-0021
 ```
+## Color Peptides 51mer
+```
+python3 scripts/color_peptides51mer.py --help
+usage: color_peptides51mer.py [-h] -p P -classI CLASSI -classII CLASSII -o O
 
+Color the 51mer peptide
+
+options:
+  -h, --help        show this help message and exit
+  -p P              The path to the Peptides 51 mer
+  -classI CLASSI    The path to the classI all_epitopes.aggregated.tsv used in pVACseq
+  -classII CLASSII  The path to the classII all_epitopes.aggregated.tsv used in pVACseq
+  -o O              Output location
+```
+
+```bash
+python3 scripts/color_peptides51mer.py -p /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/10146-0021_Peptides_51-mer.xlsx -classI /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classI.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -classII /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classII.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -o /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/test_colored_peptide.html
+```
 ## Bold ClassII
 
 ```
