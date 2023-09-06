@@ -101,7 +101,7 @@ python3 /opt/scripts/generate_reviews_files.py -a /Volumes/gillandersw/Active/Pr
 ```
 ## Color Peptides 51mer
 ```
-python3 scripts/color_peptides51mer.py --help
+python3 /opt/scripts/color_peptides51mer.py --help
 usage: color_peptides51mer.py [-h] -p P -classI CLASSI -classII CLASSII -o O
 
 Color the 51mer peptide
