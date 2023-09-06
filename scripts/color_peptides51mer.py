@@ -325,8 +325,6 @@ def main():
             
             new_string = create_stylized_sequence(peptide_sequence)
 
-            print(new_string)
-
             next_td_tags[2].string = new_string
 
             modified_html = peptides_51mer_soup.prettify(formatter=None)
