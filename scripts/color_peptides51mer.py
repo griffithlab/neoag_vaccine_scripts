@@ -116,6 +116,7 @@ def set_underline(peptide_sequence, mutant_peptide_pos):
     classI_position = 0
 
     if '-' in mutant_peptide_pos:
+
         positions = mutant_peptide_pos.split("-")
 
         start_position = int(positions[0])
@@ -197,6 +198,7 @@ def create_stylized_sequence(peptide_sequence):
         if nucleotide.open_tag or nucleotide.close_tag:
             if nucleotide.close_tag:
                 new_string += '</span>'
+                
 
             if nucleotide.open_tag:
 
@@ -225,9 +227,11 @@ def create_stylized_sequence(peptide_sequence):
                 elif nucleotide.bold and not nucleotide.color and nucleotide.underline:
                     new_string += '<span style="font-weight:bold;text-decoration:underline;">'
                     new_string += nucleotide.nucleotide
+
+            if not nucleotide.large and not nucleotide.bold and not nucleotide.color and not nucleotide.underline:
+                new_string += nucleotide.nucleotide
         else:
             new_string += nucleotide.nucleotide
-
     return(new_string)   
 
 def main():
@@ -330,7 +334,7 @@ def main():
             modified_html = peptides_51mer_soup.prettify(formatter=None)
 
         else:
-            print("Search string not found.")
+            print("\nSearch string: ", search_string, " not found.\n")
 
     with open(args.o, "w", encoding = 'utf-8') as file:
         file.write(modified_html)
