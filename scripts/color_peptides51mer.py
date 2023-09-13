@@ -110,22 +110,24 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide):
 
     return(peptide_sequence)
 
-def set_underline(peptide_sequence, mutant_peptide_pos):
+def set_underline(peptide_sequence, mutant_peptide_pos, row_ID):
 
     frameshift = False
     classI_position = 0
 
+    print(row_ID)
     if '-' in mutant_peptide_pos:
-
         positions = mutant_peptide_pos.split("-")
-
         start_position = int(positions[0])
         end_position = int(positions[1])
 
         frameshift = True
+        
 
     else:
         mutant_peptide_pos = int(mutant_peptide_pos)
+
+        
 
     if frameshift:
 
@@ -249,8 +251,10 @@ def main():
     # Create a universal ID by editing the peptide 51mer ID
     peptides_51mer.rename(columns={'ID': 'full ID'}, inplace=True)
     peptides_51mer['ID'] = peptides_51mer['full ID']
+    print()
 
     peptides_51mer['ID'] = peptides_51mer['ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Removing before first period, periods will be removed 
+    
     peptides_51mer['ID'] = peptides_51mer['ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Removing before second period
     peptides_51mer['ID'] = peptides_51mer['ID'].apply(lambda x: '.'.join(x.split('.')[:3]) + '.' + '.'.join(x.split('.')[4:]))
 
@@ -323,7 +327,9 @@ def main():
             # actaully lets break class I and classII into two steps and handle the mutated nucleotide in class I function
             # it should be basically like at that position in the class I set 
 
-            set_underline(peptide_sequence, mutant_peptide_pos)
+            print(row['full ID'])
+            print(mutant_peptide_pos)
+            set_underline(peptide_sequence, mutant_peptide_pos, row['full ID'])
 
             set_span_tags(peptide_sequence) # pass by reference
             
