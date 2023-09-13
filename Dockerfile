@@ -8,6 +8,8 @@ ADD scripts/requirements.txt /opt/scripts/requirements.txt
 ADD scripts/fda_quality_thresholds.csv /opt/scripts/fda_quality_thresholds.csv
 ADD scripts/generate_reviews_files.py /opt/scripts/generate_reviews_files.py
 ADD scripts/bold_classII.py /opt/scripts/bold_classII.py
+ADD scripts/color_peptides51mer.py /opt/scripts/color_peptides51mer.py
+ADD scripts/setup_reivew.py /opt/scripts/setup_review.py
 
 RUN chmod +r /opt/scripts/*
 
