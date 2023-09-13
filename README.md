@@ -79,7 +79,14 @@ python3 /opt/scripts/get_neoantigen_qc.py -WB /path/to/mcdb048/gcp_immuno -f fin
 python3 /opt/scripts/get_neoantigen_qc.py --n_dna normal_dna_aligned_metrics.txt --t_dna tumor_dna_aligned_metrics.txt --t_rna tumor_rna_aligned_metrics.txt --concordance concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM --rna_metrics rna_metrics.txt --strand_check trimmed_read_1strandness_check.txt --yaml jlf-100-044_immuno_cloud-WDL.yaml --fin_variants variants.final.annotated.tsv
 ```
 
-## Generate Review Files
+## Setup Review Files
+
+This script called the scripts generate_reviews_files.py and color_peptides51mer.py
+```
+python3 scripts/setup_review.py -a JLF-100-045-Reviewed-Annotated.Neoantigen_Candidates.xlsx -c annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp JLF-100-045 -classI JLF-100-045-tumor-exome.all_epitopes.aggregated_classI.tsv -classII JLF-100-045-tumor-exome.all_epitopes.aggregated_classII.tsv -o output.html
+```
+
+### Generate Review Files
 
 ```
 python3 /opt/scripts/generate_reviews_files.py --help
@@ -117,22 +124,4 @@ options:
 ```bash
 python3 scripts/color_peptides51mer.py -p /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/10146-0021_Peptides_51-mer.xlsx -classI /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classI.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -classII /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classII.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -o /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/test_colored_peptide.html
 ```
-## Bold ClassII
 
-```
-python3 /opt/scripts/bold_classII.py --help
-usage: bold_classII.py [-h] -p P -classI CLASSI -classII CLASSII -o O
-
-Bold the class II pepetides
-
-options:
-  -h, --help        show this help message and exit
-  -p P              The path to the Peptides 51 mer
-  -classI CLASSI    The path to the classI all_epitopes.aggregated.tsv used in pVACseq
-  -classII CLASSII  The path to the classII all_epitopes.aggregated.tsv used in pVACseq
-  -o O              Output location for the html doc
-```
-
-```bash
-python3 /opt/scripts/bold_classII.py -p /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/10146-0021 Peptides 51-mer.xlsx -classI /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classI.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -classII /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classII.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -o /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/test_colored_peptide.html
-```
