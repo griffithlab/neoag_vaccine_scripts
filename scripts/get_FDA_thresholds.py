@@ -36,9 +36,9 @@ def parse_arguments():
     parser.add_argument("--una_n_dna", help="file path for unaligned normal dna FDA report table")
     parser.add_argument("--una_t_dna", help="file path for unaligned tumor dna FDA report table")
     parser.add_argument("--una_t_rna", help="file path for unaligned tumor rna FDA report table")
-    parser.add_argument("--somalier", help="file path for Somalier results for sample tumor/normal sample relatedness")
+    parser.add_argument("--somalier", help="file path for Somalier results for sample tumor/normal sample relatedness (concordance.somalier.pairs.tsv)")
     parser.add_argument("--contam_n", help="file path for VerifyBamID results for contamination the normal sample")
-    parser.add_argument("--contam_t", help="file path for VerifyBamID results for contamination the tumor sample")
+    parser.add_argument("--contam_t", help="file path for VerifyBamID results for contamination the tumor dna sample")
 
     return(parser.parse_args())
 
@@ -362,7 +362,7 @@ def main():
 
     
     if args.WB:
-        qc.to_csv(args.WB + final_result + '/qc/fda_quality_thresholds_report.tsv', sep="\t", index=False)
+        qc.to_csv(args.WB + final_result + '/fda_quality_thresholds_report.tsv', sep="\t", index=False)
     else:
         qc.to_csv('fda_quality_thresholds_report.tsv', sep="\t", index=False)
 

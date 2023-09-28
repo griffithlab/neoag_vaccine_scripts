@@ -274,13 +274,16 @@ def main():
     else:
         qc_file = open('qc_file.txt', 'w')
 
-    
+    print()
+    print()
+
     qc_file.write(get_read_pairs(normal_dna, tumor_dna, tumor_rna))
     qc_file.write(get_relatedness(concordance))
     qc_file.write(get_contaimination(contamination_normal, contamination_tumor))
     qc_file.write(get_rna_alignment(rna_metrics))
     qc_file.write(check_strand(strandness_check,  yaml_file))
     qc_file.write(get_variant_count(final_variants))
+    qc_file.write("REMEMBER to visually inspect end bias plot (usually found in qc/tumor_rna/rna_metrics.pdf)")
 
     print()
     print("REMEMBER to visually inspect end bias plot (usually found in qc/tumor_rna/rna_metrics.pdf)")

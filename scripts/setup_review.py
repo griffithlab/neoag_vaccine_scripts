@@ -4,10 +4,9 @@ import subprocess
 # Define the command-line arguments
 parser = argparse.ArgumentParser(description='Sets up manuel review files')
 
+parser.add_argument('-samp', help='Name of the sample')
 parser.add_argument('-a', help='Path to ITB Reviewed Candidates')
 parser.add_argument('-c', help='Path to annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv')
-parser.add_argument('-samp', help='Name of the sample')
-parser.add_argument('-f', "--fin_results", help='Name of the final results folder')
 
 parser.add_argument('-classI', help='Path to classI all_epitopes.aggregated.tsv', required=True)
 parser.add_argument('-classII', help='Path to classII all_epitopes.aggregated.tsv', required=True)
@@ -24,8 +23,8 @@ if not args.classI or not args.classII or not args.o:
 
 
 
-command1 = f"python scripts/generate_reviews_files.py -a {args.a} -c {args.c} -samp {args.samp}"
-command2 = f"python scripts/color_peptides51mer.py -p {args.samp}_Peptides_51-mer.xlsx -classI {args.classI} -classII {args.classII} -o {args.o}"
+command1 = f"python /opt/scripts/generate_reviews_files.py -a {args.a} -c {args.c} -samp {args.samp}"
+command2 = f"python /opt/scripts/color_peptides51mer.py -p {args.samp}_Peptides_51-mer.xlsx -classI {args.classI} -classII {args.classII} -o {args.o}"
 
 
 # Execute the first script

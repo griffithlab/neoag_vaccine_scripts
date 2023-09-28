@@ -115,7 +115,6 @@ def set_underline(peptide_sequence, mutant_peptide_pos, row_ID):
     frameshift = False
     classI_position = 0
 
-    print(row_ID)
     if '-' in mutant_peptide_pos:
         positions = mutant_peptide_pos.split("-")
         start_position = int(positions[0])
@@ -251,12 +250,12 @@ def main():
     # Create a universal ID by editing the peptide 51mer ID
     peptides_51mer.rename(columns={'ID': 'full ID'}, inplace=True)
     peptides_51mer['ID'] = peptides_51mer['full ID']
-    print()
 
     peptides_51mer['ID'] = peptides_51mer['ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Removing before first period, periods will be removed 
     
     peptides_51mer['ID'] = peptides_51mer['ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Removing before second period
     peptides_51mer['ID'] = peptides_51mer['ID'].apply(lambda x: '.'.join(x.split('.')[:3]) + '.' + '.'.join(x.split('.')[4:]))
+    
 
     for index, row in peptides_51mer.iterrows():
         for i, char in enumerate(row['ID'][::-1]):
@@ -306,7 +305,9 @@ def main():
         classII_peptide = merged_peptide_51mer.loc[merged_peptide_51mer['full ID'] == search_string, 'Best Peptide Class II'].values[0]
         #classI_sequence 
         classI_peptide = merged_peptide_51mer.loc[merged_peptide_51mer['full ID'] == search_string, 'Best Peptide Class I'].values[0]
-        # mutant pepetide position --- not working yet becasue of STUPID frameshift
+        
+        
+        # mutant pepetide position ---
         mutant_peptide_pos = str(merged_peptide_51mer.loc[merged_peptide_51mer['full ID'] == search_string, 'Pos'].values[0])
 
         # Find the tag containing the search string
@@ -326,9 +327,7 @@ def main():
 
             # actaully lets break class I and classII into two steps and handle the mutated nucleotide in class I function
             # it should be basically like at that position in the class I set 
-
-            print(row['full ID'])
-            print(mutant_peptide_pos)
+            
             set_underline(peptide_sequence, mutant_peptide_pos, row['full ID'])
 
             set_span_tags(peptide_sequence) # pass by reference
@@ -340,7 +339,10 @@ def main():
             modified_html = peptides_51mer_soup.prettify(formatter=None)
 
         else:
-            print("\nSearch string: ", search_string, " not found.\n")
+            print("\nNOT FOUND: ", search_string)
+            print("Mutant Peptide Position: ", mutant_peptide_pos)
+            print("ClassI: ", classI_peptide)
+            print("ClassII: ", classII_peptide, "\n")
 
     with open(args.o, "w", encoding = 'utf-8') as file:
         file.write(modified_html)
