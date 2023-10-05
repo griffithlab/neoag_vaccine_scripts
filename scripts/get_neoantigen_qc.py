@@ -270,7 +270,7 @@ def main():
 
     # create a text file to store results
     if args.WB:
-        qc_file = open(args.WB + final_result + '/qc_file.txt', 'w')
+        qc_file = open(args.WB + '/../manual_review/qc_file.txt', 'w')
     else:
         qc_file = open('qc_file.txt', 'w')
 

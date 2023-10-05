@@ -349,8 +349,12 @@ def main():
 
 
 
-
-    fda_quality_thresholds = pd.read_csv("/opt/scripts/fda_quality_thresholds.csv")
+    try:
+        fda_quality_thresholds = pd.read_csv("/opt/scripts/fda_quality_thresholds.csv")
+    except:
+        print("Running Locally, not in Docker")
+        fda_quality_thresholds = pd.read_csv("scripts/fda_quality_thresholds.csv")
+        print()
 
     qc = reshape_quality_thresholds(fda_quality_thresholds)
 
@@ -362,7 +366,7 @@ def main():
 
     
     if args.WB:
-        qc.to_csv(args.WB + final_result + '/fda_quality_thresholds_report.tsv', sep="\t", index=False)
+        qc.to_csv(args.WB +  '/../manual_review/fda_quality_thresholds_report.tsv', sep="\t", index=False)
     else:
         qc.to_csv('fda_quality_thresholds_report.tsv', sep="\t", index=False)
 
@@ -373,4 +377,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

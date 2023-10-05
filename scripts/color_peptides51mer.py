@@ -30,8 +30,10 @@ def parse_arguments():
                         help='The path to the classI all_epitopes.aggregated.tsv used in pVACseq', required=True)
     parser.add_argument('-classII',
                         help='The path to the classII all_epitopes.aggregated.tsv used in pVACseq', required=True)
+    parser.add_argument('-WB',
+                        help='the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt')
+    parser.add_argument('-samp', help='Name of the sample')
 
-    parser.add_argument('-o', help="Output location", required=True)
 
     return(parser.parse_args())
 
@@ -344,10 +346,14 @@ def main():
             print("ClassI: ", classI_peptide)
             print("ClassII: ", classII_peptide, "\n")
 
-    with open(args.o, "w", encoding = 'utf-8') as file:
+    if args.WB:
+        html_file_name = args.WB +  '/../manual_review/' + args.samp + ".Colored_Peptides.html" 
+    else:
+        html_file_name  =  args.samp + ".Colored_Peptides.html"
+
+    with open(html_file_name, "w", encoding = 'utf-8') as file:
         file.write(modified_html)
 
 
-
 if __name__ == "__main__":
-    main()
+    main()  main()
