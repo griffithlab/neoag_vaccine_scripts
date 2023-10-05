@@ -1,4 +1,4 @@
-import argparse
+mport argparse
 import csv
 import pandas as pd
 import sys
@@ -28,6 +28,8 @@ def parse_arguments():
                         help='The path to annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv from the generate_protein_fasta script')
     parser.add_argument('-samp',
                         help='The name of the sample')
+    parser.add_argument('-WB',
+                        help='the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt')
 
     # The name of the final results folder 
     parser.add_argument('-f', "--fin_results", help="Name of the final results folder in gcp immuno")
@@ -67,11 +69,19 @@ def main():
     peptides = peptides[["ID", "CANDIDATE NEOANTIGEN", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES", 
                            "RESTRICTING HLA ALLELE", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)", "Comments"]]
 
-    Peptide_file_name = args.samp + "_Peptides_51-mer.xlsx"
+    if args.WB:
+        Peptide_file_name = args.WB +  '/../manual_review/' + args.samp + "_Peptides_51-mer.xlsx"
+    else:
+        Peptide_file_name =  args.samp + "_Peptides_51-mer.xlsx"
+
     peptides.to_excel(Peptide_file_name, index=False)
 
-    Neoantigen_Canidates_file_name = args.samp + ".Annotated.Neoantigen_Candidates.xlsx"
-    reviewed_canidates.to_excel( Neoantigen_Canidates_file_name, index=False)
+    if args.WB:
+        Neoantigen_Canidates_file_name = args.WB +  '/../manual_review/' + args.samp + ".Annotated.Neoantigen_Candidates.xlsx"
+    else:
+        Neoantigen_Canidates_file_name =  args.samp + ".Annotated.Neoantigen_Candidates.xlsx"
+
+    reviewed_canidates.to_excel(Neoantigen_Canidates_file_name, index=False)
 
 
 if __name__ == "__main__":
