@@ -25,8 +25,8 @@ if not args.classI or not args.classII or not args.WB:
 
 
 
-command1 = f"python /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/generate_reviews_files.py -WB {args.WB} -a {args.a} -c {args.c} -samp {args.samp}"
-command2 = f"python /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/color_peptides51mer.py -WB {args.WB} -p {args.WB}/../manual_review/{args.samp}_Peptides_51-mer.xlsx -classI {args.classI} -classII {args.classII} -samp {args.samp}"
+command1 = f"python /opt/scripts/generate_reviews_files.py -WB {args.WB} -a {args.a} -c {args.c} -samp {args.samp}"
+command2 = f"python /opt/scripts/color_peptides51mer.py -WB {args.WB} -p {args.WB}/../manual_review/{args.samp}_Peptides_51-mer.xlsx -classI {args.classI} -classII {args.classII} -samp {args.samp}"
 
 
 # Execute the first script
