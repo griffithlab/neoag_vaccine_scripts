@@ -2,6 +2,7 @@ import argparse
 import csv
 import pandas as pd
 import sys
+from Bio.SeqUtils.ProtParam import ProteinAnalysis
 
 '''
 Write a script to create the files for the Case Final Reports
@@ -57,9 +58,16 @@ def main():
     peptides = pd.read_csv(args.c, sep="\t")
     peptides =  peptides.drop(['cterm_7mer_gravy_score', 'cysteine_count', 'n_terminal_asparagine', 'asparagine_proline_bond_count', 
                                  'difficult_n_terminal_residue', 'c_terminal_cysteine', 'c_terminal_proline', 'max_7mer_gravy_score'], axis=1)
-    peptides = peptides.rename(columns={"id":"ID", "peptide_sequence":"CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES"})
     peptides["RESTRICTING HLA ALLELE"] = " "
-    peptides["CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)"] = " "
+
+    # Define a function to calculate molecular weight
+    def calculate_molecular_weight(peptide):
+        analyzed_seq = ProteinAnalysis(peptide)
+        return analyzed_seq.molecular_weight()
+
+    peptides["CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)"] = peptides["peptide_sequence"].apply(calculate_molecular_weight)
+
+    peptides = peptides.rename(columns={"id":"ID", "peptide_sequence":"CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES"})
     peptides["Comments"] = " "
     peptides["CANDIDATE NEOANTIGEN"] = peptides["ID"].apply(lambda x: '.'.join(x.split('.')[:3]))
     peptides["CANDIDATE NEOANTIGEN"] = args.samp + "." + peptides["CANDIDATE NEOANTIGEN"]
