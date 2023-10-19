@@ -320,6 +320,10 @@ def main():
             print("ClassI: ", classI_peptide)
             print("ClassII: ", classII_peptide, "\n")
 
+        tag_with_search_string =  modified_html.find('th', string="51mer ID")
+        tag_with_search_string.decompose()
+
+
     if args.WB:
         html_file_name = args.WB +  '/../manual_review/' + args.samp + ".Colored_Peptides.html" 
     else:

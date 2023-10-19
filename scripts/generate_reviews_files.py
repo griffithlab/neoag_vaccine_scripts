@@ -54,6 +54,8 @@ def main():
     
     reviewed_canidates = reviewed_canidates[reviewed_canidates.Evaluation != "Pending"]
     reviewed_canidates = reviewed_canidates[reviewed_canidates.Evaluation != "Reject"]
+    # key for sorted the tables
+    reviewed_canidates["CANDIDATE NEOANTIGEN"] = args.samp + "." + "MT." + reviewed_canidates["Pos"] + "." + reviewed_canidates["Gene"]
 
     peptides = pd.read_csv(args.c, sep="\t")
     peptides =  peptides.drop(['cterm_7mer_gravy_score', 'cysteine_count', 'n_terminal_asparagine', 'asparagine_proline_bond_count', 
@@ -76,6 +78,11 @@ def main():
 
     peptides = peptides[["ID", "CANDIDATE NEOANTIGEN", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES", 
                            "RESTRICTING HLA ALLELE", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)", "Comments"]]
+    
+    # Sort the reviewed canidates according to peptide
+    reviewed_canidates =  reviewed_canidates.set_index('Col2')
+    reviewed_canidates =  reviewed_canidates.reindex(index=peptides['CANDIDATE NEOANTIGEN'])
+    reviewed_canidates =  reviewed_canidates.reset_index()
 
     if args.WB:
         Peptide_file_name = args.WB +  '/../manual_review/' + args.samp + "_Peptides_51-mer.xlsx"
