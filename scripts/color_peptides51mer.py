@@ -273,8 +273,7 @@ def main():
     for index, row in peptides_51mer.iterrows():
 
         search_string = row['51mer ID']
-        print(search_string)
-
+        
         #classII_sequence 
         classII_peptide = merged_peptide_51mer.loc[merged_peptide_51mer['51mer ID'] == search_string, 'Best Peptide Class II'].values[0]
         #classI_sequence 
