@@ -273,7 +273,6 @@ def main():
     for index, row in peptides_51mer.iterrows():
 
         search_string = row['51mer ID']
-        print(search_string)
 
         #classII_sequence 
         classII_peptide = merged_peptide_51mer.loc[merged_peptide_51mer['51mer ID'] == search_string, 'Best Peptide Class II'].values[0]
@@ -309,6 +308,9 @@ def main():
             new_string = create_stylized_sequence(peptide_sequence)
 
             next_td_tags[2].string = new_string
+
+            # Remove the tag_with_search_string from the BeautifulSoup tree
+            tag_with_search_string.decompose()
 
             modified_html = peptides_51mer_soup.prettify(formatter=None)
 
