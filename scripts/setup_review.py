@@ -1,6 +1,17 @@
 import argparse
 import subprocess
 
+def execute_script(script_path):
+    try:
+        print("Executing...", script_path)
+        subprocess.run(script_path, shell=True, check=True)
+        print("Successful.")
+        print()
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Script {script_path} did not execute correctly. Error: {e}")
+        print()
+
+
 # Define the command-line arguments
 parser = argparse.ArgumentParser(description='Sets up manuel review files')
 
@@ -30,15 +41,11 @@ command2 = f"python /opt/scripts/color_peptides51mer.py -WB {args.WB} -p {args.W
 
 
 # Execute the first script
-print("Generating Review Files...")
-
-subprocess.run(command1, shell=True)
+execute_script(command1)
 
 # Execute the second script
-print("Coloring Peptide Sequeces...")
-
-subprocess.run(command2, shell=True)
+execute_script(command2)
 
 
-print("Scripts have been executed successfully.")
+
 
