@@ -2,6 +2,8 @@ import argparse
 import csv
 import pandas as pd
 import sys
+from Bio.SeqUtils.ProtParam import ProteinAnalysis
+import re
 
 '''
 Write a script to create the files for the Case Final Reports
@@ -36,6 +38,29 @@ def parse_arguments():
 
     return(parser.parse_args())
 
+# Fucnction to break the pepetides ID on the . to extract gene and AA information
+def extract_info(value):
+    parts = value.split('.')
+    result = '.'.join([parts[2], parts[3], parts[4]])
+    return result
+
+# Function to rearrange string so that G518D looks like 518G/D
+def rearrange_string(s):
+    match = re.match(r'([A-Za-z]+)([\d-]+)([A-Za-z]*)', s)
+    if match:
+        letters_before = match.group(1)
+        numbers = match.group(2)
+        letters_after = match.group(3)
+                
+        return f"{numbers}{letters_before}/{letters_after}"
+    else:
+        return s
+    
+# Function to calculate molecular weight
+def calculate_molecular_weight(peptide):
+    analyzed_seq = ProteinAnalysis(peptide)
+    return analyzed_seq.molecular_weight()
+
 def main():
 
     # 1. ITB reivew
@@ -54,20 +79,41 @@ def main():
     reviewed_canidates = reviewed_canidates[reviewed_canidates.Evaluation != "Pending"]
     reviewed_canidates = reviewed_canidates[reviewed_canidates.Evaluation != "Reject"]
 
+    reviewed_canidates = reviewed_canidates.rename(columns={'Comments':'pVAC Review Comments'})
+    reviewed_canidates["Variant Called by CLE Pipeline"] = " "
+    reviewed_canidates["IGV Review Comments"] = " "
+
+
+    # create sorting ID that is gene and transcript to sort in the same order as peptide
+    reviewed_canidates['sorting id'] = reviewed_canidates['Gene']  + '.' + reviewed_canidates['Best Transcript']
+
+
     peptides = pd.read_csv(args.c, sep="\t")
     peptides =  peptides.drop(['cterm_7mer_gravy_score', 'cysteine_count', 'n_terminal_asparagine', 'asparagine_proline_bond_count', 
                                  'difficult_n_terminal_residue', 'c_terminal_cysteine', 'c_terminal_proline', 'max_7mer_gravy_score'], axis=1)
-    peptides = peptides.rename(columns={"id":"ID", "peptide_sequence":"CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES"})
     peptides["RESTRICTING HLA ALLELE"] = " "
-    peptides["CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)"] = " "
+
+    peptides["CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)"] = peptides["peptide_sequence"].apply(calculate_molecular_weight)
+
+    peptides = peptides.rename(columns={"id":"ID", "peptide_sequence":"CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES"})
     peptides["Comments"] = " "
     peptides["CANDIDATE NEOANTIGEN"] = peptides["ID"].apply(lambda x: '.'.join(x.split('.')[:3]))
     peptides["CANDIDATE NEOANTIGEN"] = args.samp + "." + peptides["CANDIDATE NEOANTIGEN"]
 
-
-
     peptides = peptides[["ID", "CANDIDATE NEOANTIGEN", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE WITH FLANKING RESIDUES", 
                            "RESTRICTING HLA ALLELE", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)", "Comments"]]
+    
+
+    # creating a ID to sort reviewed canidates by the order of the 51mer
+    peptides['sorting id'] = peptides['ID'].apply(extract_info)
+
+    reviewed_canidates = reviewed_canidates.set_index('sorting id')
+    reviewed_canidates = reviewed_canidates.reindex(index=peptides['sorting id'])
+    reviewed_canidates = reviewed_canidates.reset_index()
+
+    reviewed_canidates = reviewed_canidates.drop(columns=['sorting id'])
+    peptides = peptides.drop(columns=['sorting id'])
+
 
     if args.WB:
         Peptide_file_name = args.WB +  '/../manual_review/' + args.samp + "_Peptides_51-mer.xlsx"

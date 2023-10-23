@@ -2,6 +2,9 @@
 
 FROM python:3.8-slim-buster
 
+RUN ["apt-get", "update"]
+RUN ["apt-get", "install", "-y", "vim"]
+
 ADD scripts/get_FDA_thresholds.py /opt/scripts/get_FDA_thresholds.py
 ADD scripts/get_neoantigen_qc.py /opt/scripts/get_neoantigen_qc.py
 ADD scripts/requirements.txt /opt/scripts/requirements.txt

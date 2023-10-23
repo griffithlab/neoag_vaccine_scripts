@@ -17,6 +17,15 @@ class AminoAcid:
         self.open_tag = open_tag
         self.close_tag = close_tag
 
+    def view(self):
+        print("Nucleotide: ", self.nucleotide)
+        print("Open Tag: ", self.open_tag)
+        print("Close Tag: ", self.close_tag)
+        print("Bold: ", self.bold)
+        print("Color: ",self.color)
+        print("Underline: ", self.underline)
+        print("Large: ", self.large)
+
 # ---- PARSE ARGUMENTS -------------------------------------------------------
 # Parses command line arguments
 # Enables user help
@@ -178,7 +187,7 @@ def set_span_tags(peptide_sequence):
             nucleotide.open_tag = True
 
             if inside_span:
-                nucleotide.close_tag = True # only if its isnide a span tag
+                nucleotide.close_tag = True # only if its inside a span tag
             else:
                 nucleotide.close_tag = False
 
@@ -202,9 +211,7 @@ def create_stylized_sequence(peptide_sequence):
             if nucleotide.close_tag:
                 new_string += '</span>'
                 
-
             if nucleotide.open_tag:
-
                 new_string += '<span style="'
                 if nucleotide.bold:
                     new_string += 'font-weight:bold;'
@@ -215,9 +222,6 @@ def create_stylized_sequence(peptide_sequence):
                 if nucleotide.large:
                      new_string += 'font-size:105%;'
                 new_string += '">'
-                new_string += nucleotide.nucleotide
-
-            if not nucleotide.large and not nucleotide.bold and not nucleotide.color and not nucleotide.underline:
                 new_string += nucleotide.nucleotide
         else:
             new_string += nucleotide.nucleotide
@@ -273,7 +277,6 @@ def main():
     for index, row in peptides_51mer.iterrows():
 
         search_string = row['51mer ID']
-        print(search_string)
 
         #classII_sequence 
         classII_peptide = merged_peptide_51mer.loc[merged_peptide_51mer['51mer ID'] == search_string, 'Best Peptide Class II'].values[0]
@@ -306,9 +309,13 @@ def main():
 
             set_span_tags(peptide_sequence) # pass by reference
             
+            print(row['51mer ID'])
             new_string = create_stylized_sequence(peptide_sequence)
 
             next_td_tags[2].string = new_string
+
+            # Remove the tag_with_search_string from the BeautifulSoup tree
+            tag_with_search_string.decompose()
 
             modified_html = peptides_51mer_soup.prettify(formatter=None)
 
@@ -317,6 +324,13 @@ def main():
             print("Mutant Peptide Position: ", mutant_peptide_pos)
             print("ClassI: ", classI_peptide)
             print("ClassII: ", classII_peptide, "\n")
+
+        soup = BeautifulSoup(modified_html, 'html.parser')
+        tag_with_search_string = soup.select_one('th:-soup-contains("51mer ID")')
+        if tag_with_search_string:
+            tag_with_search_string.decompose()
+        # Now 'soup' contains the modified HTML with the tag removed
+        modified_html = soup.prettify(formatter=None)
 
     if args.WB:
         html_file_name = args.WB +  '/../manual_review/' + args.samp + ".Colored_Peptides.html" 
