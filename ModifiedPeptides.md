@@ -121,7 +121,7 @@ docker run -it -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud --e
 
 cd $HOME
 
-python3 scripts/modify_peptides.py -n 3 --100-043/ModifiedPeptides/sequences.csv  -samp $SAMPLE_NAM -HLA $HLA_ALLELES -WD $HOME
+python3 /opt/scripts/modify_peptides.py -n 3 -m *.csv  -samp $SAMPLE_NAME -HLA $HLA_ALLELES -WD $HOME
 ```
 
 For example, if you speficify -n 1 then the modified sequences produced will me:
