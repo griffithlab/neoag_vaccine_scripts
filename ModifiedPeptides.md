@@ -169,6 +169,9 @@ To check for successful completion of all jobs you can check the stdout logs tha
 
 ```bash
 grep "Pipeline finished" */pvacbind_results/*/stdout.txt | wc -l
+
+# leave docker
+exit
 ```
 
 ### Combine all the pVACbind results into a single file
