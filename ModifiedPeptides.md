@@ -117,7 +117,9 @@ The -n argument is the maximum number of modified peptides and the -m argument i
 ```
 docker pull griffithlab/neoang_scripts:latest
 
-docker run -it -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud griffithlab/neoang_scripts:latest /bin/bash
+docker run -it -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud --env HOME --env SAMPLE_NAME --env HLA_ALLELES griffithlab/neoang_scripts:latest /bin/bash
+
+cd $HOME
 
 python3 scripts/modify_peptides.py -n 3 --100-043/ModifiedPeptides/sequences.csv  -samp $SAMPLE_NAM -HLA $HLA_ALLELES -WD $HOME
 ```
@@ -142,7 +144,7 @@ EPG5.c-term-R	KELPLYLWQPSTSEIAVIRDWR	KELPLYLWQPSTSEIAVIRDW|R
 
 ```bash
 docker pull griffithlab/pvactools:4.0.5
-docker run -it -v $HOME/:$HOME/ --user $(id -u):$(id -g) --env HOME --env SAMPLE_NAME --env HLA_ALLELES griffithlab/pvactools:4.0.5 /bin/bash
+docker run -it -v $HOME/:$HOME/ --env HOME --env SAMPLE_NAME --env HLA_ALLELES griffithlab/pvactools:4.0.5 /bin/bash
 cd $HOME
 
 for LENGTH in 8 9 10 11
