@@ -266,20 +266,7 @@ optional arguments:
 ## Color Peptides 51mer
 
 ```
-python3  /opt/scripts/generate_reviews_files.py --help
-usage: generate_reviews_files.py [-h] [-a A] [-c C] [-samp SAMP] [-WB WB] [-f FIN_RESULTS]
-
-Create the file needed for the neoantigen manuel review
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -a A                  The path to the ITB Reviewed Candidates
-  -c C                  The path to annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv from the generate_protein_fasta script
-  -samp SAMP            The name of the sample
-  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
-  -f FIN_RESULTS, --fin_results FIN_RESULTS
-                        Name of the final results folder in gcp immuno
-root@02d92932f0f8:/# python3  /opt/scripts/color_peptides51mer.py --help
+python3  /opt/scripts/color_peptides51mer.py --help
 usage: color_peptides51mer.py [-h] -p P -classI CLASSI -classII CLASSII [-WB WB] [-samp SAMP]
 
 Color the 51mer peptide
