@@ -1,10 +1,5 @@
 # Neoantigen Pipeline Helper Scripts
-
-
-- Docker
-```bash
-  bsub -n 1 -Is -G compute/ -g /evelyn/default -q general-interactive -M 16G -R 'rusage[mem=16G]' -a 'docker('evelyns2000/neoang_scripts')' /bin/bash
-```
+These scripts assist in setting up files ofr manualling reviewing the results for Neoantigen Vaccine Desing results generate from the [Washington University Immuno Pipeline](https://github.com/wustl-oncology/analysis-wdls).
   
 ## Creating Case Final Report on compute 1
 
@@ -35,6 +30,8 @@ exit
 
 ### After Immunogenomics Tumor Board Review
 
+After the Immunogenomics Tumor Board Review, both a .tsv and .xlsx file are downloaded from pVACview whihc contains the canidates marked as Accept, Review, Reject, and Pending. These files should be kept in a fould named itb-review-files.
+
 #### Generate Protein Fasta
 
 ```bash
@@ -46,7 +43,7 @@ mkdir all
 
 zcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less # Get sample ID Found in the #CHROM header of VCF
 export SAMPLE_ID="TWJF-10146-0029-0029_Tumor_Lysate"
-export ITB_REVIEW_FILE=10146-0029.Annotated.Neoantigen_Candidates.Revd.tsv
+
 
 
 bsub -Is -q general-interactive -G $GROUP -a "docker(griffithlab/pvactools:4.0.1)" /bin/bash
@@ -56,7 +53,7 @@ pvacseq generate_protein_fasta \
   --pass-only --mutant-only -d 150 \
   -s $SAMPLE_ID \
   --aggregate-report-evaluation {Accept,Review} \
-  --input-tsv ../itb-review-files/$ITB_REVIEW_FILE  \
+  --input-tsv ../itb-review-files/*.tsv  \
   $WORKING_BASE/final_results/annotated.expression.vcf.gz \
   25 \
   $WORKING_BASE/../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa
@@ -83,7 +80,7 @@ export SAMPLE="TWJF-10146-0029"
 python3 /opt/scripts/setup_review.py -WB $WORKING_BASE -a ../itb-review-files/*.xlsx -c $WORKING_BASE/../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp $SAMPLE  -classI $WORKING_BASE/final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII $WORKING_BASE/final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv 
 ```
 
-## Creating Case Final Report on locally
+## Creating Case Final Report locally
 
 ### Before Immunogenomics Tumor Board Review
 
@@ -115,6 +112,8 @@ exit
 ```
 
 ### After Immunogenomics Tumor Board Review
+
+After the Immunogenomics Tumor Board Review, both a .tsv and .xlsx file are downloaded from pVACview whihc contains the canidates marked as Accept, Review, Reject, and Pending. These files should be kept in a fould named itb-review-files.
 
 #### Generate Protein Fasta
 
