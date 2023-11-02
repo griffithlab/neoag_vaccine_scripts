@@ -167,7 +167,7 @@ python3 /opt/scripts/setup_review.py -WB $WORKING_BASE -a ../itb-review-files/*.
 ```
 Open colored_peptides51mer.html and copy the table into an excel spreadsheet. The formatting should remain. Utilizing the Annotated.Neoantigen_Candidates and colored Peptides_51-mer for manual review.
 
-# Description of Scripts includes
+# Description of Scripts
 
 ## Get Basic QC
 
