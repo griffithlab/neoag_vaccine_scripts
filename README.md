@@ -6,122 +6,164 @@
   bsub -n 1 -Is -G compute/ -g /evelyn/default -q general-interactive -M 16G -R 'rusage[mem=16G]' -a 'docker('evelyns2000/neoang_scripts')' /bin/bash
 ```
   
-## Get FDA Thresholds
+## Creating Case Final Report on compute 1
 
-- List of parameters
-```
-python3 /opt/scripts/get_FDA_thresholds.py --help
-usage: get_FDA_thresholds.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--una_n_dna UNA_N_DNA] [--una_t_dna UNA_T_DNA] [--una_t_rna UNA_T_RNA] [--somalier SOMALIER] [--contam_n CONTAM_N] [--contam_t CONTAM_T]
+### Before Immunogenomics Tumor Board Review
 
-Process some integers.
+A written case final report will be created which includes a Genomics Review Report document. This document includes a section of a basic data QC review and a table summarizing values that pass/fail the FDA quality thresholds.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
-  -f FIN_RESULTS, --fin_results FIN_RESULTS
-                        Name of the final results folder in gcp immuno
-  --n_dna N_DNA         file path for aligned normal dna FDA report table
-  --t_dna T_DNA         file path for aligned tumor dna FDA report table
-  --t_rna T_RNA         file path for aligned tumor rna FDA report table
-  --una_n_dna UNA_N_DNA
-                        file path for unaligned normal dna FDA report table
-  --una_t_dna UNA_T_DNA
-                        file path for unaligned tumor dna FDA report table
-  --una_t_rna UNA_T_RNA
-                        file path for unaligned tumor rna FDA report table
-  --somalier SOMALIER   file path for Somalier results for sample tumor/normal sample relatedness
-  --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
-  --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor sample
-  ```
-### Example Commands
-```bash
-python3 /opt/scripts/get_FDA_thresholds.py -WB /storage1/fs1/mgriffit/Active/JLF_MCDB/cases/JLF-100-042/gcp_immuno -f final_results_v1
-```
+### Basic data QC
 
-```bash
-python3 /opt/scripts/get_FDA_thresholds.py --n_dna aligned_normal_dna_table2.csv --t_dna aligned_tumor_dna_table2.csv --t_rna aligned_tumor_rna_table3.csv --una_n_dna unaligned_normal_dna_table1.csv --una_t_dna unaligned_tumor_dna_table1.csv --una_t_rna unaligned_tumor_rna_table1.csv --somalier concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM
-```
-
-## Get Neoanitgen QC
+Pull the basic data qc from various files. This script will output a file final_results/qc_file.txt and also print the summary to to screen.
 
 ```
-python3 /opt/scripts/get_neoantigen_qc.py --help
-usage: get_neoantigen_qc.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--concordance CONCORDANCE] [--contam_n CONTAM_N] [--contam_t CONTAM_T] [--rna_metrics RNA_METRICS] [--strand_check STRAND_CHECK] --yaml YAML
-                            [--fin_variants FIN_VARIANTS]
+mkdir $WORKING_BASE/../manual_review
+cd $WORKING_BASE/../manual_review
 
-Get the stats for the basic data QC review in the neoantigen final report.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
-  -f FIN_RESULTS, --fin_results FIN_RESULTS
-                        Name of the final results folder in gcp immuno
-  --n_dna N_DNA         file path for aligned normal dna FDA report table
-  --t_dna T_DNA         file path for aligned tumor dna FDA report table
-  --t_rna T_RNA         file path for aligned tumor rna FDA report table
-  --concordance CONCORDANCE
-                        file path for Somalier results for sample tumor/normal sample relatedness
-  --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
-  --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor sample
-  --rna_metrics RNA_METRICS
-  --strand_check STRAND_CHECK
-  --yaml YAML
-  --fin_variants FIN_VARIANTS
-
+bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts)" /bin/bash
+python3 /opt/scripts/get_neoantigen_qc.py -WB $WORKING_BASE -f final_results --yaml $WORKING_BASE/yamls/$CLOUD_YAML
 ```
 
-### Example Commands
-```bash
-python3 /opt/scripts/get_neoantigen_qc.py -WB /path/to/mcdb048/gcp_immuno -f final_results_v1 --yaml /path/to/gcp_immuno/final_results_v1/workflow_artifacts/mcdb048_immuno_cloud-WDL.yaml
+### FDA Quality Thresholds
+
+This script will output a file final_results/fda_quality_thresholds_report.tsv and also print the summary to to screen.
+
 ```
+python3 /opt/scripts/get_FDA_thresholds.py -WB  $WORKING_BASE -f final_results
+exit
+```
+
+### After Immunogenomics Tumor Board Review
+
+#### Generate Protein Fasta
 
 ```bash
-python3 /opt/scripts/get_neoantigen_qc.py --n_dna normal_dna_aligned_metrics.txt --t_dna tumor_dna_aligned_metrics.txt --t_rna tumor_rna_aligned_metrics.txt --concordance concordance.somalier.pairs.tsv --contam_n normal.VerifyBamId.selfSM --contam_t tumor.VerifyBamId.selfSM --rna_metrics rna_metrics.txt --strand_check trimmed_read_1strandness_check.txt --yaml jlf-100-044_immuno_cloud-WDL.yaml --fin_variants variants.final.annotated.tsv
+cd $WORKING_BASE
+mkdir ../generate_protein_fasta
+cd ../generate_protein_fasta
+mkdir candidates
+mkdir all
+
+zcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less # Get sample ID Found in the #CHROM header of VCF
+export SAMPLE_ID="TWJF-10146-0029-0029_Tumor_Lysate"
+export ITB_REVIEW_FILE=10146-0029.Annotated.Neoantigen_Candidates.Revd.tsv
+
+
+bsub -Is -q general-interactive -G $GROUP -a "docker(griffithlab/pvactools:4.0.1)" /bin/bash
+
+pvacseq generate_protein_fasta \
+  -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
+  --pass-only --mutant-only -d 150 \
+  -s $SAMPLE_ID \
+  --aggregate-report-evaluation {Accept,Review} \
+  --input-tsv ../itb-review-files/$ITB_REVIEW_FILE  \
+  $WORKING_BASE/final_results/annotated.expression.vcf.gz \
+  25 \
+  $WORKING_BASE/../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa
+
+pvacseq generate_protein_fasta \
+  -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
+  --pass-only --mutant-only -d 150 \
+  -s $SAMPLE_ID  \
+  $WORKING_BASE/final_results/annotated.expression.vcf.gz \
+  25  \
+  $WORKING_BASE/../generate_protein_fasta/all/annotated_filtered.vcf-pass-51mer.fa
+
+exit 
 ```
 
-## Setup Review Files
-
-This script called the scripts generate_reviews_files.py and color_peptides51mer.py
-```
-python3 scripts/setup_review.py -a JLF-100-045-Reviewed-Annotated.Neoantigen_Candidates.xlsx -c annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp JLF-100-045 -classI JLF-100-045-tumor-exome.all_epitopes.aggregated_classI.tsv -classII JLF-100-045-tumor-exome.all_epitopes.aggregated_classII.tsv -o output.html
-```
-
-### Generate Review Files
+To generate files needed for manual review, save the pVAC results from the Immunogenomics Tumor Board Review meeting as $SAMPLE.revd.Annotated.Neoantigen_Candidates.xlsx (Note: if the file is not saved under this exact name the below command will need to be modified).
 
 ```
-python3 /opt/scripts/generate_reviews_files.py --help
-usage: generate_reviews_files.py [-h] [-a A] [-c C] [-samp SAMP] [-f FIN_RESULTS]
+cd $WORKING_BASE/../manual_review
+bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts)" /bin/bash
 
-Create the file needed for the neoantigen manuel review
+export SAMPLE="TWJF-10146-0029"
 
-options:
-  -h, --help            show this help message and exit
-  -a A                  The path to the ITB Reviewed Candidates
-  -c C                  The path to annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv from the generate_protein_fasta script
-  -samp SAMP            The name of the sample
-  -f FIN_RESULTS, --fin_results FIN_RESULTS
-                        Name of the final results folder in gcp immuno
+python3 /opt/scripts/setup_review.py -WB $WORKING_BASE -a ../itb-review-files/*.xlsx -c $WORKING_BASE/../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp $SAMPLE  -classI $WORKING_BASE/final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII $WORKING_BASE/final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv 
 ```
+
+## Creating Case Final Report on locally
+
+### Before Immunogenomics Tumor Board Review
+
+A written case final report will be created which includes a Genomics Review Report document. This document includes a section of a basic data QC review and a table summarizing values that pass/fail the FDA quality thresholds.
+
+### Basic data QC
+
+Pull the basic data qc from various files. This script will output a file final_results/qc_file.txt and also print the summary to to screen.
+
+```
+mkdir $WORKING_BASE/../manual_review
+cd $WORKING_BASE/../manual_review
+
+docker pull griffithlab/neoang_scripts:latest
+docker run -it -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud --env $WORKING_BASE griffithlab/neoang_scripts:latest /bin/bash
+
+cd $WORKING_BASE
+
+python3 /opt/scripts/get_neoantigen_qc.py -WB $WORKING_BASE -f final_results --yaml $WORKING_BASE/yamls/$CLOUD_YAML
+```
+
+### FDA Quality Thresholds
+
+This script will output a file final_results/fda_quality_thresholds_report.tsv and also print the summary to to screen.
+
+```
+python3 /opt/scripts/get_FDA_thresholds.py -WB  $WORKING_BASE -f final_results
+exit
+```
+
+### After Immunogenomics Tumor Board Review
+
+#### Generate Protein Fasta
 
 ```bash
-python3 /opt/scripts/generate_reviews_files.py -a /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/itb-review-files/10146-0021.Annotated.Neoantigen_Candidates.xlsx -c /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp 10146-0021
-```
-## Color Peptides 51mer
-```
-python3 /opt/scripts/color_peptides51mer.py --help
-usage: color_peptides51mer.py [-h] -p P -classI CLASSI -classII CLASSII -o O
+cd $WORKING_BASE
+mkdir ../generate_protein_fasta
+cd ../generate_protein_fasta
+mkdir candidates
+mkdir all
 
-Color the 51mer peptide
+zcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less # Get sample ID Found in the #CHROM header of VCF
+export SAMPLE_ID="TWJF-10146-0029-0029_Tumor_Lysate"
 
-options:
-  -h, --help        show this help message and exit
-  -p P              The path to the Peptides 51 mer
-  -classI CLASSI    The path to the classI all_epitopes.aggregated.tsv used in pVACseq
-  -classII CLASSII  The path to the classII all_epitopes.aggregated.tsv used in pVACseq
-  -o O              Output location
+docker pull griffithlab/pvactools:4.0.5
+docker run -it -v $HOME/:$HOME/ --env $WORKING_BASE  --env SAMPLE_ID griffithlab/pvactools:4.0.5 /bin/bash
+
+cd $WORKING_BASE
+
+pvacseq generate_protein_fasta \
+  -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
+  --pass-only --mutant-only -d 150 \
+  -s $SAMPLE_ID \
+  --aggregate-report-evaluation {Accept,Review} \
+  --input-tsv ../itb-review-files/*.tsv  \
+  $WORKING_BASE/final_results/annotated.expression.vcf.gz \
+  25 \
+  $WORKING_BASE/../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa
+
+pvacseq generate_protein_fasta \
+  -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
+  --pass-only --mutant-only -d 150 \
+  -s $SAMPLE_ID  \
+  $WORKING_BASE/final_results/annotated.expression.vcf.gz \
+  25  \
+  $WORKING_BASE/../generate_protein_fasta/all/annotated_filtered.vcf-pass-51mer.fa
+
+exit 
 ```
 
-```bash
-python3 scripts/color_peptides51mer.py -p /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/10146-0021_Peptides_51-mer.xlsx -classI /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classI.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -classII /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/classII.TWJF-10146-0021-Tumor_Lysate.all_epitopes.aggregated.tsv -o /Volumes/mgriffit/Active/griffithlab/gc2596/e.schmidt/neoag_vaccine_scripts/scripts/data_files/test_colored_peptide.html
-```
+To generate files needed for manual review, save the pVAC results from the Immunogenomics Tumor Board Review meeting as $SAMPLE.revd.Annotated.Neoantigen_Candidates.xlsx (Note: if the file is not saved under this exact name the below command will need to be modified).
 
+```
+cd $WORKING_BASE/../manual_review
+
+docker pull griffithlab/neoang_scripts:latest
+docker run -it -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud --env $WORKING_BASE griffithlab/neoang_scripts:latest /bin/bash
+
+export SAMPLE="TWJF-10146-0029"
+
+python3 /opt/scripts/setup_review.py -WB $WORKING_BASE -a ../itb-review-files/*.xlsx -c $WORKING_BASE/../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp $SAMPLE  -classI $WORKING_BASE/final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII $WORKING_BASE/final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv 
+```
+Open colored_peptides51mer.html and copy the table into an excel spreadsheet. The formatting should remain. Utilizing the Annotated.Neoantigen_Candidates and colored Peptides_51-mer for manual review.
