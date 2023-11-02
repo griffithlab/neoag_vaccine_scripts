@@ -197,6 +197,8 @@ optional arguments:
 ```
 
 ## GET FDA metrics
+
+```bash
 python3  /opt/scripts/get_FDA_thresholds.py --help
 usage: get_FDA_thresholds.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--una_n_dna UNA_N_DNA] [--una_t_dna UNA_T_DNA] [--una_t_rna UNA_T_RNA]
                              [--somalier SOMALIER] [--contam_n CONTAM_N] [--contam_t CONTAM_T]
@@ -220,6 +222,7 @@ optional arguments:
   --somalier SOMALIER   file path for Somalier results for sample tumor/normal sample relatedness (concordance.somalier.pairs.tsv)
   --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
   --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor dna sample
+```
 
 ## Setup Review
 
