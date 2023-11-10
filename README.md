@@ -41,10 +41,13 @@ cd ../generate_protein_fasta
 mkdir candidates
 mkdir all
 
-zcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less # Get sample ID Found in the #CHROM header of VCF
-export SAMPLE_ID="TWJF-10146-0029-0029_Tumor_Lysate"
+#generate a protein fasta file using the final annotated/evaluated neoantigen candidates TSV as input
+#this will filter down to only those candidates under consideration and use the top transcript
 
+# check the file to find Tumor sample ID in the #CHROM header of VCF
 
+gzcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less
+export PATIENT_ID="100-049-BG004667"
 
 bsub -Is -q general-interactive -G $GROUP -a "docker(griffithlab/pvactools:4.0.1)" /bin/bash
 
@@ -124,8 +127,13 @@ cd ../generate_protein_fasta
 mkdir candidates
 mkdir all
 
-zcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less # Get sample ID Found in the #CHROM header of VCF
-export SAMPLE_ID="TWJF-10146-0029-0029_Tumor_Lysate"
+#generate a protein fasta file using the final annotated/evaluated neoantigen candidates TSV as input
+#this will filter down to only those candidates under consideration and use the top transcript
+
+# check the file to find Tumor sample ID in the #CHROM header of VCF
+
+gzcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less
+export PATIENT_ID="100-049-BG004667"
 
 docker pull griffithlab/pvactools:4.0.5
 docker run -it -v $HOME/:$HOME/ --env $WORKING_BASE  --env SAMPLE_ID griffithlab/pvactools:4.0.5 /bin/bash
