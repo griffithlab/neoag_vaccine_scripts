@@ -323,8 +323,8 @@ def main():
             print("Mutant Peptide Position: ", mutant_peptide_pos)
             print("ClassI: ", classI_peptide)
             print("ClassII: ", classII_peptide, "\n")
-       
-	 modified_html = peptides_51mer_soup.prettify(formatter=None)
+
+        modified_html = peptides_51mer_soup.prettify(formatter=None)
 
         soup = BeautifulSoup(modified_html, 'html.parser')
         tag_with_search_string = soup.select_one('th:-soup-contains("51mer ID")')
