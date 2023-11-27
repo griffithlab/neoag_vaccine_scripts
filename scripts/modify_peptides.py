@@ -1,6 +1,11 @@
 import argparse
 from itertools import product, chain
 import pandas as pd
+import sys
+import os
+import re
+import subprocess
+
 
 
 # ---- PARSE ARGUMENTS -------------------------------------------------------
@@ -14,6 +19,13 @@ def parse_arguments():
                         help='The maximum number of mofifying peptides to add to the begining or end')
     parser.add_argument('-m',
                         help='A csv file containing the name/indentifer for the sequence which does NOT have to be unique')
+    parser.add_argument('-samp',
+                        help='sample name')
+    parser.add_argument('-HLA',
+                        help='a list of the HLA alleles in the format: HLA-A*02:01,HLA-A*24:02,HLA-B*07:02,HLA-B*35:02,HLA-C*04:01,HLA-C*07:02')
+    parser.add_argument('-WD',
+                        help='The directory in which you would like to run pVACbind')
+    
     return(parser.parse_args())
 
 def generate_modifed_peptides(n, name, base_sequence):
@@ -80,9 +92,160 @@ def main():
 
         list = list + sequences_list
 
-    df = pd.DataFrame(list) 
+    peptide_table = pd.DataFrame(list) 
 
-    df.to_csv('peptide_table.tsv', sep="\t", index=False, header=None)
+    peptide_table.to_csv('peptide_table.tsv', sep="\t", index=False, header=None)
+
+
+    # Perform checks
+    num_entries = len(peptide_table)
+
+    # Check if all entries in the sequence_name column are unique
+    are_all_unique = not peptide_table['sequence_name'].duplicated().any()
+
+    if are_all_unique:
+        print("All entries in the sequence_name column are unique.")
+    else:
+        print("There are duplicate entries in the sequence_name column.")
+        sys.exit(1)
+    
+    with open('modified_peptides.fa', 'w') as fasta_file:
+        for index, row in peptide_table.iterrows():
+            sequence_name = ">" + row['sequence_name']
+            sequence = row['parsed_sequence']
+            fasta_file.write(f"{sequence_name}\n{sequence}\n")
+
+
+    # Create dirs for processing the N-term and C-term sequences separately
+    os.makedirs("n-term", exist_ok=True)
+    os.makedirs("c-term", exist_ok=True)
+
+    with open('modified_peptides.fa', 'r') as input_file, \
+            open('n-term/modified_peptides_n-term.fa', 'w') as n_term_file, \
+            open('c-term/modified_peptides_c-term.fa', 'w') as c_term_file:
+        
+        for line in input_file:
+            line = line.strip()
+            
+            # Check for the pattern 'n-term' in the line
+            if 'n-term' in line:
+                n_term_file.write(line + '\n')
+                
+                # Ensure there are at least two more lines in the file
+                try:
+                    next_line = next(input_file).strip()
+                    n_term_file.write(next_line + '\n')
+                except StopIteration:
+                    # Handle the case where there are not enough lines left
+                    pass
+            
+            # Check for the pattern 'c-term' in the line
+            if 'c-term' in line:
+                c_term_file.write(line + '\n')
+                
+                # Ensure there are at least two more lines in the file
+                try:
+                    next_line = next(input_file).strip()
+                    c_term_file.write(next_line + '\n')
+                except StopIteration:
+                    # Handle the case where there are not enough lines left
+                    pass
+
+    def get_line_count(file_path):
+        with open(file_path, 'r') as file:
+            return sum(1 for line in file)
+
+    modified_peptides_count = get_line_count('modified_peptides.fa')
+    n_term_count = get_line_count('n-term/modified_peptides_n-term.fa')
+    c_term_count = get_line_count('c-term/modified_peptides_c-term.fa')
+
+    if n_term_count+ c_term_count == modified_peptides_count:
+        print("Sucessfully split fasta into n-term and c-term")
+    else:
+        print("N-term and c-term fasta lines to not equal modified fasta lines")
+
+
+    def  create_subpeptide_fastas_n_term(input_dir, results_dir, infile_path):
+        # Define the lengths to iterate over
+        lengths = [8, 9, 10, 11]
+
+        # Iterate over each test length
+        for LENGTH in lengths:
+            # Create input files for each test length
+            print(f"Creating input fasta to test peptides of length: {LENGTH}")
+            
+            # Set the file paths
+            LENGTH_FASTA = os.path.join(input_dir , f"{LENGTH}-mer-test.fa")
+            LENGTH_RESULT_DIR = os.path.join(results_dir, f"{LENGTH}-mer-test")
+            
+            # Create the result directory if it doesn't exist
+            os.makedirs(LENGTH_RESULT_DIR, exist_ok=True)
+            
+            with open(infile_path, 'r') as infile, open(LENGTH_FASTA, 'w') as length_fasta:
+                for line in infile:
+                    line = line.strip()
+                    if line.startswith('>'):
+                        length_fasta.write(f"{line}\n")
+                    elif match := re.match(r'(\w+)\|(\w+)', line):
+                        before, after = match.groups()
+                        sub = after[:LENGTH - 1]
+                        length_fasta.write(f"{before}{sub}\n")
+                infile.close()
+
+    def  create_subpeptide_fastas_c_term(input_dir, results_dir, infile_path):
+        # Define the lengths to iterate over
+        lengths = [8, 9, 10, 11]
+
+        for LENGTH in lengths:
+            # Create input files for each test length so that each test sequence will contain at least one modified base
+            print(f"Creating input fasta to test peptides of length: {LENGTH}")
+
+            LENGTH_FASTA = os.path.join(input_dir, f"{LENGTH}-mer-test.fa")
+            LENGTH_RESULT_DIR = os.path.join(results_dir, f"{LENGTH}-mer-test")
+
+            os.makedirs(LENGTH_RESULT_DIR, exist_ok=True)
+
+            with open(infile_path, 'r') as infile, open(LENGTH_FASTA, 'w') as length_fasta:
+                for line in infile:
+                    line = line.strip()
+                    if line.startswith('>'):
+                        length_fasta.write(f"{line}\n")
+                    elif match := re.match(r'(\w+)\|(\w+)', line):
+                        before, after = match.groups()
+                        sub = before[-(LENGTH - 1):]
+                        length_fasta.write(f"{sub}{after}\n")
+                infile.close()
+
+    # Set up sub-peptide fasta sequences for each target class I prediction length
+    working_dir = args.WD
+
+    input_dir = os.path.join(working_dir + "/n-term/pvacbind_inputs")
+    results_dir = os.path.join(working_dir + "/n-term/pvacbind_results")
+    infile_path = os.path.join(working_dir + "/n-term/modified_peptides_n-term.fa")
+
+    os.makedirs(input_dir, exist_ok=True)
+    os.makedirs(results_dir, exist_ok=True)
+
+    print("Creating sub-pepetide fastas for n-term")
+    create_subpeptide_fastas_n_term(input_dir, results_dir, infile_path)
+
+    input_dir = os.path.join(working_dir + "/c-term/pvacbind_inputs")
+    results_dir = os.path.join(working_dir + "/c-term/pvacbind_results")
+    infile_path = os.path.join(working_dir + "/c-term/modified_peptides_c-term.fa")
+
+    os.makedirs(input_dir, exist_ok=True)
+    os.makedirs(results_dir, exist_ok=True)
+
+    print("Creating sub-pepetide fastas for c-term")
+    create_subpeptide_fastas_c_term(input_dir, results_dir, infile_path)
+
+    # Run pVACtools
+
+
+
+
+
+
 
 if __name__ == "__main__":
     main()

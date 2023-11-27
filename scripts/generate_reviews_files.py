@@ -98,7 +98,7 @@ def main():
     # create sorting ID that is gene and transcript to sort in the same order as peptide
     reviewed_candidates['sorting id'] = reviewed_candidates['Gene']  + '.' + reviewed_candidates['Best Transcript']
     # make sure the sorting id column is unique
-    reviewed_canidates = make_column_unique(reviewed_candidates, 'sorting id')
+    reviewed_candidates = make_column_unique(reviewed_candidates, 'sorting id')
 
     peptides = pd.read_csv(args.c, sep="\t")
     peptides =  peptides.drop(['cterm_7mer_gravy_score', 'cysteine_count', 'n_terminal_asparagine', 'asparagine_proline_bond_count', 
@@ -141,7 +141,7 @@ def main():
     else:
         Neoantigen_Canidates_file_name =  args.samp + ".Annotated.Neoantigen_Candidates.xlsx"
 
-    reviewed_canidates.to_excel(Neoantigen_Canidates_file_name, index=False)
+    reviewed_candidates.to_excel(Neoantigen_Canidates_file_name, index=False)
 
 
 if __name__ == "__main__":
