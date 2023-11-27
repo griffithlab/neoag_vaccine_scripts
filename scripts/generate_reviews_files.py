@@ -9,12 +9,6 @@ import re
 Write a script to create the files for the Case Final Reports
 - Sample Peptides 51-mer
 - SAMPLE.Annotated.Neoantigen_Candidates.xlsx
-
-Maybe the Sample Genomics Review Report with everything highlighted in yellow
-
-
-Use:
-python3 generate_reviews_files.py -a /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/itb-review-files/10146-0021.Annotated.Neoantigen_Candidates.xlsx -c /Volumes/gillandersw/Active/Project_0001_Clinical_Trials/CTEP/analysis/TWJF-10146-MO011-0021/generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp 10146-0021
 '''
 
 # ---- PARSE ARGUMENTS -------------------------------------------------------
@@ -56,37 +50,55 @@ def rearrange_string(s):
     else:
         return s
     
-# Function to calculate molecular weight
+# Function to calculate molecular weight---------------------------------------
 def calculate_molecular_weight(peptide):
     analyzed_seq = ProteinAnalysis(peptide)
     return analyzed_seq.molecular_weight()
 
+# Function to make id column unique -------------------------------------------
+def make_column_unique(df, column_name):
+    seen_values = set()
+    new_values = []
+
+    for value in df[column_name]:
+        if value in seen_values:
+            suffix = 1
+            while f"{value}.{suffix}" in seen_values:
+                suffix += 1
+            unique_value = f"{value}.{suffix}"
+        else:
+            unique_value = value
+
+        seen_values.add(unique_value)
+        new_values.append(unique_value)
+
+    df[column_name] = new_values
+    return df
+
+
 def main():
-
-    # 1. ITB reivew
-    # 2. Generate protein Fasta 
-
 
     args = parse_arguments()
     
-    reviewed_canidates = pd.read_excel(args.a)
+    reviewed_candidates = pd.read_excel(args.a)
  
 
-    reviewed_canidates.columns = reviewed_canidates.iloc[0]
-    reviewed_canidates = reviewed_canidates[1:] # there is a extra row before the col name row
-    reviewed_canidates = reviewed_canidates.reset_index(drop=True) # Reset the index of the dataframe
+    reviewed_candidates.columns = reviewed_candidates.iloc[0]
+    reviewed_candidates = reviewed_candidates[1:] # there is a extra row before the col name row
+    reviewed_candidates = reviewed_candidates.reset_index(drop=True) # Reset the index of the dataframe
     
-    reviewed_canidates = reviewed_canidates[reviewed_canidates.Evaluation != "Pending"]
-    reviewed_canidates = reviewed_canidates[reviewed_canidates.Evaluation != "Reject"]
+    reviewed_candidates = reviewed_candidates[reviewed_candidates.Evaluation != "Pending"]
+    reviewed_candidates = reviewed_candidates[reviewed_candidates.Evaluation != "Reject"]
 
-    reviewed_canidates = reviewed_canidates.rename(columns={'Comments':'pVAC Review Comments'})
-    reviewed_canidates["Variant Called by CLE Pipeline"] = " "
-    reviewed_canidates["IGV Review Comments"] = " "
+    reviewed_candidates = reviewed_candidates.rename(columns={'Comments':'pVAC Review Comments'})
+    reviewed_candidates["Variant Called by CLE Pipeline"] = " "
+    reviewed_candidates["IGV Review Comments"] = " "
 
 
     # create sorting ID that is gene and transcript to sort in the same order as peptide
-    reviewed_canidates['sorting id'] = reviewed_canidates['Gene']  + '.' + reviewed_canidates['Best Transcript']
-
+    reviewed_candidates['sorting id'] = reviewed_candidates['Gene']  + '.' + reviewed_candidates['Best Transcript']
+    # make sure the sorting id column is unique
+    reviewed_canidates = make_column_unique(reviewed_candidates, 'sorting id')
 
     peptides = pd.read_csv(args.c, sep="\t")
     peptides =  peptides.drop(['cterm_7mer_gravy_score', 'cysteine_count', 'n_terminal_asparagine', 'asparagine_proline_bond_count', 
@@ -106,12 +118,14 @@ def main():
 
     # creating a ID to sort reviewed canidates by the order of the 51mer
     peptides['sorting id'] = peptides['ID'].apply(extract_info)
+    # make sure every sorting id is unique
+    peptides = make_column_unique(peptides, 'sorting id')
 
-    reviewed_canidates = reviewed_canidates.set_index('sorting id')
-    reviewed_canidates = reviewed_canidates.reindex(index=peptides['sorting id'])
-    reviewed_canidates = reviewed_canidates.reset_index()
+    reviewed_candidates = reviewed_candidates.set_index('sorting id')
+    reviewed_candidates = reviewed_candidates.reindex(index=peptides['sorting id'])
+    reviewed_candidates = reviewed_candidates.reset_index()
 
-    reviewed_canidates = reviewed_canidates.drop(columns=['sorting id'])
+    reviewed_candidates = reviewed_candidates.drop(columns=['sorting id'])
     peptides = peptides.drop(columns=['sorting id'])
 
 
