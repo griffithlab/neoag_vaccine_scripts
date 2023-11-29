@@ -83,10 +83,23 @@ def main():
     reviewed_candidates = pd.read_excel(args.a)
  
 
-    reviewed_candidates.columns = reviewed_candidates.iloc[0]
-    reviewed_candidates = reviewed_candidates[1:] # there is a extra row before the col name row
-    reviewed_candidates = reviewed_candidates.reset_index(drop=True) # Reset the index of the dataframe
+    #reviewed_candidates.columns = reviewed_candidates.iloc[0]
+    #reviewed_candidates = reviewed_candidates[1:] # there is a extra row before the col name row
+    #reviewed_candidates = reviewed_candidates.reset_index(drop=True) # Reset the index of the dataframe
     
+    # Check if the first row is blank
+    if reviewed_candidates.iloc[0].isnull().all():
+        # Remove the first row if it's blank
+        reviewed_candidates = reviewed_candidates[1:]
+        # If there are still rows in the DataFrame, proceed with the operations
+        if not reviewed_candidates.empty:
+            # Set the columns to the values of the first row
+            reviewed_candidates.columns = reviewed_candidates.iloc[0]
+            # Skip the first row (which is now the column names)
+            reviewed_candidates = reviewed_candidates[1:]
+            # Reset the index of the DataFrame
+            reviewed_candidates = reviewed_candidates.reset_index(drop=True)
+
     reviewed_candidates = reviewed_candidates[reviewed_candidates.Evaluation != "Pending"]
     reviewed_candidates = reviewed_candidates[reviewed_candidates.Evaluation != "Reject"]
 

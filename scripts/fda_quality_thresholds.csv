@@ -1,18 +1,18 @@
 ﻿Criteria,Threshold for pass/failure
-TOTAL_READS (tumor DNA),>250M
-TOTAL_READS (normal DNA),>100M
-TOTAL_READS (tumor RNA),>200M
-PCT_PF_READS_ALIGNED (tumor/normal DNA),>95%
-PCT_PF_READS_ALIGNED (tumor RNA),>85%
-PCT_USABLE_BASES_ON_TARGET  (tumor/normal DNA),>20%
-PCT_EXC_OFF_TARGET  (tumor/normal DNA),<60%
-PERCENT_DUPLICATION  (tumor/normal DNA),<40%
-MEAN_TARGET_COVERAGE (tumor DNA),>250x
-MEAN_TARGET_COVERAGE (normal DNA),>100x
-PCT_TARGET_BASES_20X  (tumor/normal DNA),>95%
-PCT_READS_ALIGNED_IN_PAIRS  (tumor/normal DNA),>95%
-MEAN_INSERT_SIZE (tumor/normal DNA),125 - 300bp
-PF_MISMATCH_RATE_1 (tumor/normal DNA),<0.75%
-PF_MISMATCH_RATE_2 (tumor/normal DNA),<1.00%
-Genotype Concordance (tumor/normal DNA),>95%
-Contamination Estimate (tumor/normal DNA),<7.5%
+TOTAL_READS (tumor DNA),>250M,/qc/fda_metrics/unaligned_sample/sample_table1.csv
+TOTAL_READS (normal DNA),>100M,/qc/fda_metrics/unaligned_sample/sample_table1.csv
+TOTAL_READS (tumor RNA),>200M,/qc/fda_metrics/unaligned_sample/sample_table1.csv
+PCT_PF_READS_ALIGNED (tumor/normal DNA),>95%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PCT_PF_READS_ALIGNED (tumor RNA),>85%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PCT_USABLE_BASES_ON_TARGET  (tumor/normal DNA),>20%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PCT_EXC_OFF_TARGET  (tumor/normal DNA),<60%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PERCENT_DUPLICATION  (tumor/normal DNA),<40%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+MEAN_TARGET_COVERAGE (tumor DNA),>250x,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+MEAN_TARGET_COVERAGE (normal DNA),>100x,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PCT_TARGET_BASES_20X  (tumor/normal DNA),>95%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PCT_READS_ALIGNED_IN_PAIRS  (tumor/normal DNA),>95%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+MEAN_INSERT_SIZE (tumor/normal DNA),125 - 300bp,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PF_MISMATCH_RATE_1 (tumor/normal DNA),<0.75%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+PF_MISMATCH_RATE_2 (tumor/normal DNA),<1.00%,/qc/fda_metrics/aligned_sample/aligned_sample_table2.csv
+Genotype Concordance (tumor/normal DNA),>95%,/qc/concordance/concordance.somalier.pairs.tsv
+Contamination Estimate (tumor/normal DNA),<7.5%,/qc/sample/normal.VerifyBamId.selfSM
