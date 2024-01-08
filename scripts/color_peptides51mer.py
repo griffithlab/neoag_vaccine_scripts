@@ -4,6 +4,11 @@ import re
 from bs4 import BeautifulSoup
 import argparse
 
+'''
+Example Command:
+python3 ../scripts/color_peptides51mer.py -p manual_review/JLF-100-051_Peptides_51-mer.xlsx -samp JLF-100-051 -o manual_review/
+'''
+
 
 class AminoAcid:
 
@@ -35,40 +40,24 @@ def parse_arguments():
 
     parser.add_argument('-p',
                         help='The path to the Peptides 51 mer', required=True)
-    parser.add_argument('-classI',
-                        help='The path to the classI all_epitopes.aggregated.tsv used in pVACseq', required=True)
-    parser.add_argument('-classII',
-                        help='The path to the classII all_epitopes.aggregated.tsv used in pVACseq', required=True)
-    parser.add_argument('-WB',
-                        help='the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt')
-    parser.add_argument('-samp', help='Name of the sample')
-
+    parser.add_argument('-samp',
+                        help='The name of the sample', required=True)
+    parser.add_argument('-o',
+                        help='the path to output folder')
 
     return(parser.parse_args())
 
-    # Function to rearrange string so that G518D looks like 518G/D
-def rearrange_string(s):
-    match = re.match(r'([A-Za-z]+)([\d-]+)([A-Za-z]*)', s)
-    if match:
-        letters_before = match.group(1)
-        numbers = match.group(2)
-        letters_after = match.group(3)
-            
-            #return f"{numbers}{letters_before}/{letters_after}"
-            # Just use the postion for the key to avoid FS problem
-        return f"{numbers}"
-    else:
-        return s
-        
 
-def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide):
+def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
+                              classI_ic50, classI_percentile, classII_percentile, 
+                              classI_transcript, classII_transcript):
 
-    peptide_sequence = []
+    peptide_sequence = [] # Create a list to hold all AA of the 51mer
 
     # Make the sequence a list of AminoAcid objects
     for i in range(len(sequence)):
         new_AA = AminoAcid(sequence[i], False, False, False, False, -1, False, False)
-
+        
         if sequence[i] == 'C':
             new_AA.large = True
         
@@ -91,32 +80,39 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide):
             positions = []
             
     # set those positions to red
+    # if median affinity < 1000 nm OR percentile < 2%
     j = 0
-    for i in range(len(peptide_sequence)):
-        if j < len(positions) and i == positions[j]:
-            peptide_sequence[i].color = True
-            j+=1
+    if float(classI_ic50) < 1000 or float(classI_percentile) < 2:
+        for i in range(len(peptide_sequence)):
+            if j < len(positions) and i == positions[j]:
+                peptide_sequence[i].color = True
+                j+=1
 
-    # CLASS II
-    positions = []
-    for i in range(len(peptide_sequence)):
-        for j in range(len(classII_peptide)):
-            if peptide_sequence[i].nucleotide == classII_peptide[j]:
-                positions.append(i)
-                i+=1
-            else:
+    if classI_transcript == classII_transcript:
+        # CLASS II         
+        positions = []
+        for i in range(len(peptide_sequence)):
+            for j in range(len(classII_peptide)):
+                if peptide_sequence[i].nucleotide == classII_peptide[j]:
+                    positions.append(i)
+                    i+=1
+                else:
+                    break
+
+            if len(positions) == len(classII_peptide):
                 break
-
-        if len(positions) == len(classII_peptide):
-            break
-        else:
-            positions = []
-
-    j = 0
-    for i in range(len(peptide_sequence)):
-        if j < len(positions) and i == positions[j]:
-            peptide_sequence[i].bold = True
-            j+=1
+            else:
+                positions = []
+        # Set class II to bold
+        # if percentile < 2% 
+        j = 0
+        if float(classII_percentile) < 2:
+            for i in range(len(peptide_sequence)):
+                if j < len(positions) and i == positions[j]:
+                    peptide_sequence[i].bold = True
+                    j+=1
+    else:
+        print("Note: ClassII transcript different then ClassI. ClassII peptide not bolded.")
     
 
     return(peptide_sequence)
@@ -126,21 +122,17 @@ def set_underline(peptide_sequence, mutant_peptide_pos, row_ID):
     frameshift = False
     classI_position = 0
 
+    # Determine if frameshift mutation by seraching for = '-'
     if '-' in mutant_peptide_pos:
         positions = mutant_peptide_pos.split("-")
         start_position = int(positions[0])
         end_position = int(positions[1])
 
         frameshift = True
-        
-
     else:
         mutant_peptide_pos = int(mutant_peptide_pos)
 
-        
-
     if frameshift:
-
         continue_underline = False
         
         for i in range(len(peptide_sequence)):
@@ -232,40 +224,6 @@ def main():
 
     # read in classI and class II
     peptides_51mer = pd.read_excel(args.p)
-    classI = pd.read_csv(args.classI, sep="\t")
-    classII = pd.read_csv(args.classII, sep="\t")
-
-    # Create a universal ID by editing the peptide 51mer ID
-    peptides_51mer.rename(columns={'ID': 'full ID'}, inplace=True)
-    peptides_51mer['51mer ID'] = peptides_51mer['full ID']
-
-    peptides_51mer['51mer ID'] = peptides_51mer['51mer ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Removing before first period, periods will be removed 
-    
-    peptides_51mer['51mer ID'] = peptides_51mer['51mer ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Removing before second period
-    peptides_51mer['51mer ID'] = peptides_51mer['51mer ID'].apply(lambda x: '.'.join(x.split('.')[:3]) + '.' + '.'.join(x.split('.')[4:]))
-    
-
-    for index, row in peptides_51mer.iterrows():
-        for i, char in enumerate(row['51mer ID'][::-1]):
-            if char.isdigit():
-                peptides_51mer.at[index, '51mer ID'] = row['51mer ID'][:-i]
-                break
-        else:
-            result = row['51mer ID']
-
-    # create a dataframe that contains the classI and classII pepetide sequence
-    classI.rename(columns = {"Best Peptide":"Best Peptide Class I"}, inplace=True)
-    classII.rename(columns = {"Best Peptide":"Best Peptide Class II"}, inplace=True)
-
-    # create a key that is gene, transcript, AA change for ClassI to join to the peptides order form
-    classI['modified AA Change'] = classI['AA Change'] 
-    classI['modified AA Change'] = classI['modified AA Change'].apply(rearrange_string)
-    classI['51mer ID'] = classI['Gene'] + '.' + classI['Best Transcript'] + '.' + classI['modified AA Change'] 
-
-    class_sequences = pd.merge(classI[['ID', 'Best Peptide Class I', '51mer ID', 'Pos']], classII[['ID', 'Best Peptide Class II']], on='ID', how='left')
-
-    # Create a dataframe that has the classI and classII sequence
-    merged_peptide_51mer = pd.merge(peptides_51mer, class_sequences, on='51mer ID', how='left')
 
     # convert peptide 51mer to HTML
     peptides_51mer_html = peptides_51mer.to_html(index=False) # convert to html
@@ -273,19 +231,28 @@ def main():
     # Creating a BeautifulSoup object and specifying the parser
     peptides_51mer_soup = BeautifulSoup(peptides_51mer_html, 'html.parser')
 
-
     for index, row in peptides_51mer.iterrows():
 
         search_string = row['51mer ID']
 
-        #classII_sequence 
-        classII_peptide = merged_peptide_51mer.loc[merged_peptide_51mer['51mer ID'] == search_string, 'Best Peptide Class II'].values[0]
-        #classI_sequence 
-        classI_peptide = merged_peptide_51mer.loc[merged_peptide_51mer['51mer ID'] == search_string, 'Best Peptide Class I'].values[0]
-        
-        
-        # mutant pepetide position ---
-        mutant_peptide_pos = str(merged_peptide_51mer.loc[merged_peptide_51mer['51mer ID'] == search_string, 'Pos'].values[0])
+        # classII sequence 
+        classII_peptide = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Best Peptide Class II'].values[0]
+        # classI sequence 
+        classI_peptide = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Best Peptide Class I'].values[0]
+        # mutant peptide position
+        mutant_peptide_pos = str(peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Pos'].values[0])
+        # classI IC50
+        classI_ic50 = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class I IC50 MT'].values[0]
+        # classI percentile
+        classI_percentile = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class I %ile MT'].values[0]
+        # classII IC50 -- not used to determine sequence coloring
+        # classII percentile
+        classII_percentile = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class II %ile MT'].values[0]
+        # classI transcript
+        classI_transcript = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class I Best Transcript'].values[0]
+        # classI transcript
+        classII_transcript = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class II Best Transcript'].values[0]
+
 
         # Find the tag containing the search string
         tag_with_search_string = peptides_51mer_soup.find('td', string=search_string)
@@ -300,7 +267,9 @@ def main():
             sequence = next_td_tags[2].get_text()
 
             # make sequence the list of objects
-            peptide_sequence = annotate_every_nucleotide(sequence, classI_peptide, classII_peptide)
+            peptide_sequence = annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
+                                                         classI_ic50, classI_percentile, classII_percentile,
+                                                         classI_transcript, classII_transcript)
 
             # actaully lets break class I and classII into two steps and handle the mutated nucleotide in class I function
             # it should be basically like at that position in the class I set 
@@ -331,13 +300,15 @@ def main():
         # Now 'soup' contains the modified HTML with the tag removed
         modified_html = peptides_51mer_soup.prettify(formatter=None)
 
-    if args.WB:
-        html_file_name = args.WB +  '/../manual_review/' + args.samp + ".Colored_Peptides.html" 
+        print()
+
+    if args.o:
+        html_file_name = args.o + args.samp + ".Colored_Peptides.html" 
     else:
-        html_file_name  =  args.samp + ".Colored_Peptides.html"
+        html_file_name  =  args.o + ".Colored_Peptides.html"
 
     with open(html_file_name, "w", encoding = 'utf-8') as file:
-        file.write(modified_html)
+        file.write( modified_html)
 
 
 if __name__ == "__main__":
