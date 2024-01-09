@@ -187,7 +187,7 @@ cat */pvacbind_results/*/MHC_Class_I/${SAMPLE_NAME}.all_epitopes.tsv | grep -v "
 ```
 
 ### Evaluate the proposed modified peptide sequences
-The goal of this analysis is to test whether any strong binding peptides are created that include the modified amino acid sequences included to improve solubility. For example, one could require that no such peptides exist where the median binding affinity is < 500nm OR median binding score percentile is < 1%.
+The goal of this analysis is to test whether any strong binding peptides are created that include the modified amino acid sequences included to improve solubility. For example, one could require that no such peptides exist where the median binding affinity is < 500nm OR median binding score percentile is < 2%.
 
 For each candidate modified peptide sequence, summarize the number of such potentially problematic peptides. 
 
