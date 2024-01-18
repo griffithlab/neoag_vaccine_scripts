@@ -80,7 +80,7 @@ def main():
     peptides = peptides[1:]
     peptides = assign_unique_numbers(peptides, "Name")
 
-    max_length = 3
+    # max_length = 3
     list = []
 
     for index, row in peptides.iterrows():
