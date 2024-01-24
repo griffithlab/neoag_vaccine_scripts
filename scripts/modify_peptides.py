@@ -32,7 +32,7 @@ def generate_modifed_peptides(n, name, base_sequence):
     characters = ['K', 'R']
     
     # Generate all possible combinations up to length n
-    all_combinations = chain.from_iterable(product(characters, repeat=i) for i in range(1, n + 1))
+    all_combinations = chain.from_iterable(product(characters, repeat=i) for i in range(1, n+1))
     possible_modifications = set(''.join(combination) for combination in all_combinations)
     
     peptide_table = []
@@ -74,7 +74,7 @@ def assign_unique_numbers(df, column_name):
 def main():
     args = parse_arguments()
 
-    max_length = args.n
+    max_length = int(args.n)
 
     peptides = pd.read_csv(args.m, names=["Name", "Sequence"], header=None)
     peptides = peptides[1:]
