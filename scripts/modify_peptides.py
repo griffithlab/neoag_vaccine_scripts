@@ -33,6 +33,7 @@ def generate_modifed_peptides(n, name, base_sequence):
     
     # Generate all possible combinations up to length n
     all_combinations = chain.from_iterable(product(characters, repeat=i) for i in range(1, n+1))
+
     possible_modifications = set(''.join(combination) for combination in all_combinations)
     
     peptide_table = []
