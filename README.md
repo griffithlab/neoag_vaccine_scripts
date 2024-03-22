@@ -135,7 +135,7 @@ mkdir all
 # check the file to find Tumor sample ID in the #CHROM header of VCF
 
 gzcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less
-export PATIENT_ID="100-049-BG004667"
+export TUMOR_SAMPLE_ID="100-049-BG004667"
 
 docker pull griffithlab/pvactools:4.0.5
 docker run -it -v $HOME/:$HOME/ --env $WORKING_BASE  --env SAMPLE_ID griffithlab/pvactools:4.0.5 /bin/bash
@@ -145,7 +145,7 @@ cd $WORKING_BASE
 pvacseq generate_protein_fasta \
   -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
   --pass-only --mutant-only -d 150 \
-  -s $SAMPLE_ID \
+  -s $TUMOR_SAMPLE_ID \
   --aggregate-report-evaluation {Accept,Review} \
   --input-tsv ../itb-review-files/*.tsv  \
   $WORKING_BASE/final_results/annotated.expression.vcf.gz \
@@ -155,7 +155,7 @@ pvacseq generate_protein_fasta \
 pvacseq generate_protein_fasta \
   -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
   --pass-only --mutant-only -d 150 \
-  -s $SAMPLE_ID  \
+  -s $TUMOR_SAMPLE_ID  \
   $WORKING_BASE/final_results/annotated.expression.vcf.gz \
   25  \
   $WORKING_BASE/../generate_protein_fasta/all/annotated_filtered.vcf-pass-51mer.fa
