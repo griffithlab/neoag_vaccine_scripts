@@ -47,14 +47,14 @@ mkdir all
 # check the file to find Tumor sample ID in the #CHROM header of VCF
 
 zcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less
-export PATIENT_ID="100-049-BG004667"
+export TUMOR_ID="100-049-BG004667"
 
 bsub -Is -q general-interactive -G $GROUP -a "docker(griffithlab/pvactools:4.0.1)" /bin/bash
 
 pvacseq generate_protein_fasta \
   -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
   --pass-only --mutant-only -d 150 \
-  -s $SAMPLE_ID \
+  -s $TUMOR_ID \
   --aggregate-report-evaluation {Accept,Review} \
   --input-tsv ../itb-review-files/*.tsv  \
   $WORKING_BASE/final_results/annotated.expression.vcf.gz \
@@ -64,7 +64,7 @@ pvacseq generate_protein_fasta \
 pvacseq generate_protein_fasta \
   -p $WORKING_BASE/final_results/pVACseq/phase_vcf/phased.vcf.gz \
   --pass-only --mutant-only -d 150 \
-  -s $SAMPLE_ID  \
+  -s $TUMOR_ID  \
   $WORKING_BASE/final_results/annotated.expression.vcf.gz \
   25  \
   $WORKING_BASE/../generate_protein_fasta/all/annotated_filtered.vcf-pass-51mer.fa
@@ -77,6 +77,8 @@ To generate files needed for manual review, save the pVAC results from the Immun
 ```
 bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts)" /bin/bash
 cd $WORKING_BASE
+
+export GCS_CASE_NAME="100-049-BG004667"
 
 python3 /opt/scripts/generate_reviews_files.py -a ../itb-review-files/*.xlsx -c ../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -classI final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv -samp $GCS_CASE_NAME -o ../manual_review/
 
