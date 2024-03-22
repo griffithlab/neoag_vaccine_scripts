@@ -46,7 +46,7 @@ mkdir all
 
 # check the file to find Tumor sample ID in the #CHROM header of VCF
 
-gzcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less
+zcat $WORKING_BASE/final_results/annotated.expression.vcf.gz | less
 export PATIENT_ID="100-049-BG004667"
 
 bsub -Is -q general-interactive -G $GROUP -a "docker(griffithlab/pvactools:4.0.1)" /bin/bash
