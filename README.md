@@ -75,9 +75,7 @@ exit
 To generate files needed for manual review, save the pVAC results from the Immunogenomics Tumor Board Review meeting as $SAMPLE.revd.Annotated.Neoantigen_Candidates.xlsx (Note: if the file is not saved under this exact name the below command will need to be modified).
 
 ```
-docker pull griffithlab/neoang_scripts
-docker run -it --env WORKING_BASE --env GCS_CASE_NAME -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud griffithlab/neoang_scripts /bin/bash
-
+bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts)" /bin/bash
 cd $WORKING_BASE
 
 python3 /opt/scripts/generate_reviews_files.py -a ../itb-review-files/*.xlsx -c ../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -classI final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv -samp $GCS_CASE_NAME -o ../manual_review/
