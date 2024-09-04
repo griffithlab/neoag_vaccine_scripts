@@ -46,7 +46,6 @@ def evaluate_unique_mapped_reads(count):
 
 def evaluate_duplication_rate(rate):
 
-    print(rate)
     """Evaluates the duplication rate."""
     if rate > 75:
         return "very poor"
