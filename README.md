@@ -308,3 +308,17 @@ optional arguments:
   -o O              Output location
 
 ```
+
+## Notes for Building and Testing
+
+Make sure to build the docker on compute1, otherwise the docker will not work on compute1. The command I use looks like this:
+
+Steps for building and testing a docker:
+1. Build to testing and test
+2. Build to a new version (for record-keeping)
+3. Build to latest
+
+I know this seems tedious but you will mess something up and your docker will be broken.
+```
+bsub -G compute-oncology -q general-interactive -Is -a 'docker_build(griffithlab/neoang_scripts:testing)' -- --tag griffithlab/neoang_scripts:testing .
+```
