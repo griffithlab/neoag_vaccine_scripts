@@ -45,6 +45,8 @@ def evaluate_unique_mapped_reads(count):
         return "excellent"
 
 def evaluate_duplication_rate(rate):
+
+    print(rate)
     """Evaluates the duplication rate."""
     if rate > 75:
         return "very poor"
@@ -116,7 +118,7 @@ def get_read_pairs(normal_dna, tumor_dna, tumor_rna):
                         parts = line.split('\t')
                         if len(parts) > 1:
                             number = parts[2].strip()
-                            evaluation = evaluate_duplication_rate(float(''.join(i for i in number if i.isdigit())))
+                            evaluation = evaluate_duplication_rate(float(number.replace(' (%)','')))
                             print(os.path.basename(file_path), "Mapped Read Duplication Rate:", number, "(", evaluation, ")")
                             read_pairs_report_string += os.path.basename(file_path) + " Mapped Read Duplication Rate: " + number + " (" + evaluation + ")\n"
         except FileNotFoundError:
