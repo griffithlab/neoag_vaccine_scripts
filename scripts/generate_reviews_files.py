@@ -90,9 +90,27 @@ def make_column_unique(df, column_name):
 # for "VALIDATED" in the variants.final.annotated.tsv file
 def fill_variant_called_column(df, variants):
     df.reset_index(drop=True, inplace=True)
+
+    start_pos = []
+    end_pos = []
+
+    for ref, alt, pos in zip(variants["REF"], variants["ALT"], variants["POS"]):
+        if len(ref) == len(alt):  # Substitution
+            start_pos.append(pos - len(ref))
+            end_pos.append(pos)
+        elif len(ref) < len(alt):  # Insertion
+            start_pos.append(pos)
+            end_pos.append(pos)
+        else:  # Deletion
+            start_pos.append(pos)
+            end_pos.append(pos + len(ref) - 1)
+    
+    variants["start_pos"] = start_pos
+    variants["end_pos"] = end_pos
+
     variants["ID"] = variants["CHROM"].astype(str) + "-" + \
-                 (variants["POS"] - 1).astype(str) + "-" + \
-                 variants["POS"].astype(str) + "-" + \
+                 variants["start_pos"].astype(str) + "-" + \
+                 variants["end_pos"].astype(str) + "-" + \
                  variants["REF"].astype(str) + "-" + \
                  variants["ALT"].astype(str)
 
