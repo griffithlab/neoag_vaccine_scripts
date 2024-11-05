@@ -14,6 +14,7 @@ ADD scripts/bold_classII.py /opt/scripts/bold_classII.py
 ADD scripts/color_peptides51mer.py /opt/scripts/color_peptides51mer.py
 ADD scripts/setup_review.py /opt/scripts/setup_review.py
 ADD scripts/modify_peptides.py /opt/scripts/modify_peptides.py
+ADD scripts/hla_comparison.py /opt/scripts/hla_comparison.py
 
 RUN chmod +r /opt/scripts/*
 
