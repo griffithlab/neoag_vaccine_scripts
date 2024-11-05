@@ -25,6 +25,13 @@ This script will output a file final_results/fda_quality_thresholds_report.tsv a
 
 ```
 python3 /opt/scripts/get_FDA_thresholds.py -WB  $WORKING_BASE -f final_results
+```
+
+### HLA Comparison
+This script will output a file manual_review/hla_comparison.tsv and also print the summary to to screen.
+
+```
+python3 /opt/scripts/hla_comparison.py -WB $WORKING_BASE
 exit
 ```
 
@@ -232,6 +239,27 @@ optional arguments:
   --somalier SOMALIER   file path for Somalier results for sample tumor/normal sample relatedness (concordance.somalier.pairs.tsv)
   --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
   --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor dna sample
+```
+## HLA Comparison
+```
+python3  /opt/scripts/hla_comparison.py --help
+usage: hla_comparison.py [-h] [-WB WB] [-f FIN_RESULTS] [--optitype_n OPTITYPE_N] [--optitype_t OPTITYPE_T] [--phlat_n PHLAT_N] [--phlat_t PHLAT_T] [--clinical CLINICAL] [--o O]
+
+Compare HLA alleles called by phlat, opitype, and clincal data if available.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -WB WB                The path to the gcp_immuno folder of the trial you wish to run the script on, defined as WORKING_BASE in envs.txt
+  -f FIN_RESULTS, --fin_results FIN_RESULTS
+                        Name of the final results folder in gcp immuno
+  --optitype_n OPTITYPE_N
+                        File path for optitype normal calls
+  --optitype_t OPTITYPE_T
+                        File path for optitype tumor calls
+  --phlat_n PHLAT_N     File path for phlat normal calls
+  --phlat_t PHLAT_T     File path for phlat tumor calls
+  --clinical CLINICAL   File path for the clinical_calls.txt
+  --o O                 Output folder
 ```
 
 ## Setup Review
