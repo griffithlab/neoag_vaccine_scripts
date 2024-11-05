@@ -107,8 +107,6 @@ def process_optitype(input_file, sample_type):
     return(df)
 
 # A function that process the clincal calls
-import pandas as pd
-
 def process_clinical(input_file):
     # Load the data and transpose to get alleles in a single row
     df = pd.read_csv(input_file, sep=',')
