@@ -115,7 +115,7 @@ def fill_variant_called_column(df, variants):
                  variants["ALT"].astype(str)
 
     common_variants = df.merge(variants[["ID", "VALIDATED"]], on="ID", how="left")
-    with pd.option_context("future.no_silent_downcasting", True):
+    with pd.option_context('mode.chained_assignment', None):
         df["Variant Called by CLE Pipeline"] = common_variants["VALIDATED"].fillna(False)
 
 def main():
