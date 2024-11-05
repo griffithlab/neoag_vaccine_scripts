@@ -32,7 +32,18 @@ def process_phlat(input_file, sample_type):
     # Collect and sort alleles for each locus
     for _, row in df.iterrows():
         locus = row['Locus']
-        alleles = sorted([row['Allele1'], row['Allele2']], key=lambda x: int(x.split(':')[1]))
+        
+        # Define a safe function to extract the numeric part
+        def get_numeric_part(allele):
+            try:
+                # Attempt to extract the numeric part after the first ':'
+                return int(allele.split(':')[1])
+            except (IndexError, ValueError):
+                # Return a large number to keep non-numeric alleles at the end
+                return float('inf')
+        
+        # Sort alleles using the safe function
+        alleles = sorted([row['Allele1'], row['Allele2']], key=get_numeric_part)
         
         # If the locus is not yet in the dictionary, add it with the sorted alleles
         if locus not in allele_columns:
@@ -55,6 +66,7 @@ def process_phlat(input_file, sample_type):
             
         for i, allele in enumerate(alleles, start=1):
             column_name = f"{locus_name}-{i}"
+            # Extract only the first two components of the allele (e.g., "A*01:01")
             new = ':'.join(allele.split(':')[:2])
             new_df.at[0, column_name] = new
     
@@ -119,8 +131,16 @@ def process_clinical(input_file):
     output_df = pd.DataFrame()
     
     for locus, alleles in allele_dict.items():
-        # Sort alleles by the numeric part
-        sorted_alleles = sorted(alleles, key=lambda x: int(x.split(':')[1]))
+        # Sort alleles by the numeric part, if available
+        def get_numeric_part(allele):
+            try:
+                # Attempt to extract the numeric part after the first ':'
+                return int(allele.split(':')[1])
+            except (IndexError, ValueError):
+                # Return a large number to keep non-numeric alleles at the end
+                return float('inf')
+        
+        sorted_alleles = sorted(alleles, key=get_numeric_part)
         
         # Create columns for each allele within this locus
         for i, allele in enumerate(sorted_alleles, start=1):
@@ -131,6 +151,7 @@ def process_clinical(input_file):
     output_df['Tool'] = ["clinical"]
     
     return output_df
+
         
 def main():
     args = parse_arguments()
