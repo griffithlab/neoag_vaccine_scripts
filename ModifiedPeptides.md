@@ -103,13 +103,22 @@ MYO9A,SALFDWIVFRINHALLNSKVLEHN
 EPG5,KELPLYLWQPSTSEIAVIRDW
 ```
 
+### Use a tmux environment
+We have found that the pvacbind command can run for a while depending on the number of sequences and suggest using tmux to make sure the run does not get interrupted. 
+
+```
+gcloud compute ssh $GCS_VM_NAME 
+sudo apt install tmux
+
+tmux new -s $SAMPLE_NAME 
+```
+
+In your tmux environment set these variables
 ```
 export HOME=/Users/evelynschmidt/jlf/JLF-100-048/ModifiedPeptides
 export HLA_ALLELES=HLA-A*24:02,HLA-A*29:02,HLA-B*14:02,HLA-B*14:02,HLA-C*02:02,HLA-C*08:02
 export SAMPLE_NAME=jlf-100-048
 ```
-
-
 
 Using the Docker and executing this command will produce the peptide_table.tsv used by pVAC bind. 
 The -n argument is the maximum number of modified peptides and the -m argument is a path to the csv file.
@@ -163,6 +172,8 @@ do
 done
 
 ```
+
+To detach from your tmux environment: `Ctrl+B, d`, and to attach `tmux attach -t $SAMPLE_NAME`.
 
 
 To check for successful completion of all jobs you can check the stdout logs that have been saved. There should be 8 successful jobs total, 4 lengths for n-term modified peptides and 4 lengths for c-term.
