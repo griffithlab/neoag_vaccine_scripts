@@ -78,7 +78,7 @@ docker run hello-world
 ```
 
 
-## Generating the peptide_table.tsv file
+## Generating the peptide_table.csv file
 
 The input is a csv file which has the names and base sequences. The name does not have to be unique.
 For example, the gene name to indentify each sequence. The sequences should not contian any modifications. 
