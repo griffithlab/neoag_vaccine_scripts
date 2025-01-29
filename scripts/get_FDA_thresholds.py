@@ -139,7 +139,6 @@ def get_values(qc, normal_dna, tumor_dna, tumor_rna, unalgined_normal_dna, unalg
                 qc.loc[(qc["Criteria"] == "Contamination Estimate") & (qc["File"] == "normal DNA"), "Value"] = float(first_entry)
             else:
                 qc.loc[(qc["Criteria"] == "Contamination Estimate") & (qc["File"] == "tumor DNA"), "Value"] = float(first_entry)
-    
     return(qc)
 
 
@@ -177,15 +176,19 @@ def evaluate_thresholds(qc):
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
+
+            qc.at[index, "Value"] = round(row["Value"], 3)
+
             
-            
-            qc.at[index, "Value"] = "{:.2%}".format(row["Value"])
+            # qc.at[index, "Value"] = "{:.2%}".format(row["Value"]) # This line was to make a clear percentage, not needed
 
         if row["Criteria"] == "PCT_EXC_OFF_TARGET":
             if row["Value"]/0.60 < 1:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
+
+            qc.at[index, "Value"] = round(row["Value"], 3)
 
         # fix to be decimal and not percentage
         if row["Criteria"] == "PERCENT_DUPLICATION":
@@ -195,6 +198,7 @@ def evaluate_thresholds(qc):
                 qc.at[index, "Pass"] = "FAIL"
 
             qc.at[index, "Value"] = qc.at[index, "Value"]/100
+            qc.at[index, "Value"] = round(row["Value"], 3)
 
 
         if (row["File"] == 'normal DNA') and (row["Criteria"] == 'MEAN_TARGET_COVERAGE'):
@@ -202,6 +206,7 @@ def evaluate_thresholds(qc):
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
+            qc.at[index, "Value"] = round(row["Value"], 3)
 
         if (row["File"] == "tumor DNA") and (row["Criteria"] == "MEAN_TARGET_COVERAGE"):
             
@@ -209,33 +214,35 @@ def evaluate_thresholds(qc):
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
+            qc.at[index, "Value"] = round(row["Value"], 3)
         
         if row["Criteria"] == "PCT_TARGET_BASES_20X":
             if row["Value"]/0.95 > 1:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
-            
+            qc.at[index, "Value"] = round(row["Value"], 3)
 
         if row["Criteria"] == "PCT_READS_ALIGNED_IN_PAIRS":
             if row["Value"]/0.95 > 1:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
-            
+            qc.at[index, "Value"] = round(row["Value"], 3)
         
         if row["Criteria"] == "MEAN_INSERT_SIZE":
             if row["Value"] >= 125 or row["Value"] <= 300:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
+            qc.at[index, "Value"] = round(row["Value"], 3)
 
         if row["Criteria"] == "PF_MISMATCH_RATE_1":
             if row["Value"]/0.0075 < 1:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
-            
+            qc.at[index, "Value"] = round(row["Value"], 3)
 
         if row["Criteria"] == "PF_MISMATCH_RATE_2":
             if row["Value"]/0.01 < 1:
@@ -243,6 +250,7 @@ def evaluate_thresholds(qc):
             else:
                 qc.at[index, "Pass"] = "FAIL" 
 
+            qc.at[index, "Value"] = round(row["Value"], 3)
 
         # fix to be decimal and not percentage
         if row["Criteria"] == "PCT_PF_READS_ALIGNED":
@@ -258,18 +266,21 @@ def evaluate_thresholds(qc):
                     qc.at[index, "Pass"] = "FAIL" 
 
             qc.at[index, "Value"] = qc.at[index, "Value"]/100
+            qc.at[index, "Value"] = round(row["Value"], 3)
                 
         if row["Criteria"] == "Genotype Concordance":
             if row["Value"]/0.95 > 1:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL" 
+            qc.at[index, "Value"] = round(row["Value"], 3)
         
         if row["Criteria"] == "Contamination Estimate":
             if row["Value"]/0.075 < 1:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL" 
+            qc.at[index, "Value"] = round(row["Value"], 3)
             
 
     return qc
@@ -364,12 +375,13 @@ def main():
 
     qc = qc.sort_values('Criteria', ignore_index=True)
 
-    
+
+
     if args.WB:
         qc.to_csv(args.WB +  '/../manual_review/fda_quality_thresholds_report.tsv', sep="\t", index=False)
     else:
         qc.to_csv('fda_quality_thresholds_report.tsv', sep="\t", index=False)
-
+    
 
     print(qc)
 
