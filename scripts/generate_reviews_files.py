@@ -23,7 +23,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Create the file needed for the neoantigen manuel review')
 
     parser.add_argument('-a',
-                        help='The path to the ITB Reviewed Candidates excel file', required=True)
+                        help='The path to the ITB Reviewed Candidates tsv file', required=True)
     parser.add_argument('-c',
                         help='The path to candidates annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv from the generate_protein_fasta script', required=True)
     parser.add_argument('-variants',
@@ -123,20 +123,21 @@ def main():
     args = parse_arguments()
     
     # Creating the Reviewed Candidates Sheet
-    reviewed_candidates = pd.read_excel(args.a)
+    reviewed_candidates =  pd.read_csv(args.a, sep="\t")
 
-    # Check if the first row is blank
-    if reviewed_candidates.iloc[0].isnull().all():
-        # Remove the first row if it's blank
-        reviewed_candidates = reviewed_candidates[1:]
-        # If there are still rows in the DataFrame, proceed with the operations
-        if not reviewed_candidates.empty:
-            # Set the columns to the values of the first row
-            reviewed_candidates.columns = reviewed_candidates.iloc[0]
-            # Skip the first row (which is now the column names)
-            reviewed_candidates = reviewed_candidates[1:]
-            # Reset the index of the DataFrame
-            reviewed_candidates = reviewed_candidates.reset_index(drop=True)
+
+    # # Check if the first row is blank
+    # if reviewed_candidates.iloc[0].isnull().all():
+    #     # Remove the first row if it's blank
+    #     reviewed_candidates = reviewed_candidates[1:]
+    #     # If there are still rows in the DataFrame, proceed with the operations
+    #     if not reviewed_candidates.empty:
+    #         # Set the columns to the values of the first row
+    #         reviewed_candidates.columns = reviewed_candidates.iloc[0]
+    #         # Skip the first row (which is now the column names)
+    #         reviewed_candidates = reviewed_candidates[1:]
+    #         # Reset the index of the DataFrame
+    #         reviewed_candidates = reviewed_candidates.reset_index(drop=True)
 
     reviewed_candidates = reviewed_candidates[reviewed_candidates.Evaluation != "Pending"]
     reviewed_candidates = reviewed_candidates[reviewed_candidates.Evaluation != "Reject"]
@@ -171,27 +172,44 @@ def main():
                            "RESTRICTING HLA ALLELE", "CANDIDATE NEOANTIGEN AMINO ACID SEQUENCE MW (CLIENT)", "Comments"]]
     
     # Add the Restricting HLA Alles from Class I and Class II
-     # create a dataframe that contains the classI and classII pepetide sequence
-         # Create a universal ID by editing the peptide 51mer ID
+    # create a dataframe that contains the classI and classII pepetide sequence
+    # Create a universal ID by editing the peptide 51mer ID
     peptides.rename(columns={'ID': 'full ID'}, inplace=True)
     peptides['51mer ID'] = peptides['full ID']
     peptides['51mer ID'] = peptides['51mer ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Removes the 'MT' from the beginning of ID column
     peptides['51mer ID'] = peptides['51mer ID'].apply(lambda x: '.'.join(x.split('.')[1:]))  # Remives the MT index from the ID column
-
+    
     def modify_id(x):
         parts = x.split('.')
+        print(parts)
         
-        if 'FS' in parts:
-            # If 'FS' is present, remove non-digit characters after the last period
-            def is_valid_char(char):
-                return char.isdigit() or char == '-' or (char in ['.', '/'] and parts[-1][parts[-1].index(char)+1].isdigit())
-            last_part = ''.join(filter(is_valid_char, parts[-1]))
-            modified_id = '.'.join(parts[:-1]) + last_part
+        def is_valid_char(char):
+            return char.isdigit() or char == '-' or (char in ['.', '/'] and parts[-1][parts[-1].index(char)+1].isdigit())
+        
+        if not 'missense' in parts:
+            if 'FS' in parts:
+                # If 'FS' is present, remove non-digit characters after the last period
+                last_part = ''.join(filter(is_valid_char, parts[-1]))
+                modified_id = '.'.join(parts[:-1]) + last_part
+            elif 'inframe_del' in parts:
+                # WDFY4.ENST00000360890.6.LK620-621-
+                last_part = parts[-1]
+                position = re.match(r'[^a-zA-Z]*', last_part).group()
+                aa = re.search(r'[^0-9-]+.*', last_part).group()
+                aa_parts = aa.split('/')
+                modified_id = '.'.join(parts[:3])
+                aa_change = aa_parts[0] + position + aa_parts[1]
+                modified_id = modified_id + "." + aa_change
+            else:
+                print("Non missense candidate not accounted for!")
+                print(parts)     
         else:
             # If 'missense' or other labels are present, remove them
             modified_id = '.'.join(parts[:3] + parts[4:])
         
         return modified_id
+    
+    
 
     #peptides['51mer ID'] = peptides['51mer ID'].apply(lambda x: '.'.join(x.split('.')[:3]) + '.' + '.'.join(x.split('.')[4:])) # removes the variant label
     peptides['51mer ID'] = peptides['51mer ID'].apply(modify_id)
@@ -220,14 +238,16 @@ def main():
         else:
             return s
     
-    classI['modified AA Change'] = classI['AA Change'] 
-    classI['modified AA Change'] = classI['modified AA Change'].apply(rearrange_string)
-    classI['51mer ID'] = classI['Gene'] + '.' + classI['Class I Best Transcript'] + '.' + classI['modified AA Change'] 
-    class_sequences = pd.merge(classI[['ID', 'Best Peptide Class I', '51mer ID', 'Pos', 'modified AA Change', 'Class I Allele', "Class I IC50 MT", "Class I %ile MT", "Class I Best Transcript"]], 
+
+    classI['position AA Change'] = classI['AA Change'].apply(rearrange_string)
+    classI['51mer ID'] = classI['Gene'] + '.' + classI['Class I Best Transcript'] + '.' + classI['position AA Change'] 
+    class_sequences = pd.merge(classI[['ID', 'Best Peptide Class I', '51mer ID', 'Pos', 'AA Change', 'Class I Allele', "Class I IC50 MT", "Class I %ile MT", "Class I Best Transcript"]], 
                                classII[['ID', 'Best Peptide Class II', 'Class II Allele', "Class II IC50 MT", "Class II %ile MT", "Class II Best Transcript"]], on='ID', how='left')
     class_sequences = class_sequences.drop(columns=['ID'])
 
     merged_peptide_51mer = pd.merge(peptides, class_sequences, on='51mer ID', how='left')
+    print(peptides['51mer ID'])
+    print(class_sequences['51mer ID'])
 
     # Fill in the Restricting HLA Allele Column
     for index, row in merged_peptide_51mer.iterrows():
