@@ -181,7 +181,6 @@ def main():
     
     def modify_id(x):
         parts = x.split('.')
-        print(parts)
         
         def is_valid_char(char):
             return char.isdigit() or char == '-' or (char in ['.', '/'] and parts[-1][parts[-1].index(char)+1].isdigit())
@@ -246,8 +245,6 @@ def main():
     class_sequences = class_sequences.drop(columns=['ID'])
 
     merged_peptide_51mer = pd.merge(peptides, class_sequences, on='51mer ID', how='left')
-    print(peptides['51mer ID'])
-    print(class_sequences['51mer ID'])
 
     # Fill in the Restricting HLA Allele Column
     for index, row in merged_peptide_51mer.iterrows():
