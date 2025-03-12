@@ -50,6 +50,7 @@ def parse_arguments():
                         help='Maximum classII IC50 score to annotate', default=0)
     parser.add_argument('-cIIpercent',
                         help='Maximum classII percentile  to annotate', default=2)
+    parser.add_argument('-probPos', nargs='*', help='problematic position to make large')
     parser.add_argument('-o',
                         help='the path to output folder')
 
@@ -59,7 +60,7 @@ def parse_arguments():
 def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
                               classI_ic50, classI_percentile, classII_ic50, classII_percentile, 
                               classI_transcript, classII_transcript, 
-                              cIIC50_threshold, cIpercentile_threshold, cIIIC50_threshold, cIIpercent_threshold):
+                              cIIC50_threshold, cIpercentile_threshold, cIIIC50_threshold, cIIpercent_threshold, probPos):
 
     peptide_sequence = [] # Create a list to hold all AA of the 51mer
 
@@ -67,7 +68,7 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
     for i in range(len(sequence)):
         new_AA = AminoAcid(sequence[i], False, False, False, False, -1, False, False)
         
-        if sequence[i] == 'C':
+        if sequence[i] in probPos:
             new_AA.large = True
         
         peptide_sequence.append(new_AA)
@@ -133,6 +134,11 @@ def set_underline(peptide_sequence, mutant_peptide_pos, row_ID):
 
     # Determine if frameshift mutation by seraching for = '-'
     if ',' in mutant_peptide_pos:
+        positions = mutant_peptide_pos.split(",")
+        start_position = int(positions[0])
+        end_position = int(positions[1])
+        frameshift = True
+    elif '-' in mutant_peptide_pos: # to account for older versions of pvacseq
         positions = mutant_peptide_pos.split(",")
         start_position = int(positions[0])
         end_position = int(positions[1])
@@ -276,12 +282,14 @@ def main():
             next_td_tags = parent_tr.findChildren('td', limit=3)
             
             sequence = next_td_tags[2].get_text()
+            
+            print(args.probPos)
 
             # make sequence the list of objects
             peptide_sequence = annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
                                                          classI_ic50, classI_percentile, classII_ic50, classII_percentile,
                                                          classI_transcript, classII_transcript,
-                                                         args.cIIC50, args.cIpercent, args.cIIIC50, args.cIIpercent)
+                                                         args.cIIC50, args.cIpercent, args.cIIIC50, args.cIIpercent, args.probPos)
 
             # actaully lets break class I and classII into two steps and handle the mutated nucleotide in class I function
             # it should be basically like at that position in the class I set 
