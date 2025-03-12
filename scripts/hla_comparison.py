@@ -33,17 +33,8 @@ def process_phlat(input_file, sample_type):
     for _, row in df.iterrows():
         locus = row['Locus']
         
-        # Define a safe function to extract the numeric part
-        def get_numeric_part(allele):
-            try:
-                # Attempt to extract the numeric part after the first ':'
-                return int(allele.split(':')[1])
-            except (IndexError, ValueError):
-                # Return a large number to keep non-numeric alleles at the end
-                return float('inf')
-        
         # Sort alleles using the safe function
-        alleles = sorted([row['Allele1'], row['Allele2']], key=get_numeric_part)
+        alleles = list([row['Allele1'], row['Allele2']])
         
         # If the locus is not yet in the dictionary, add it with the sorted alleles
         if locus not in allele_columns:
@@ -69,7 +60,7 @@ def process_phlat(input_file, sample_type):
             # Extract only the first two components of the allele (e.g., "A*01:01")
             new = ':'.join(allele.split(':')[:2])
             new_df.at[0, column_name] = new
-    
+            
     new_df['Tool'] = ["phlat"]
     new_df['sample_type'] = [sample_type]
     return new_df
@@ -107,7 +98,7 @@ def process_optitype(input_file, sample_type):
     return(df)
 
 # A function that process the clincal calls
-def process_clinical(input_file):
+def process_clinical(input_file, sample_type):
     # Load the data and transpose to get alleles in a single row
     df = pd.read_csv(input_file, sep=',')
     alleles = df.columns.tolist()
@@ -149,8 +140,44 @@ def process_clinical(input_file):
             output_df.at[0, column_name] = new[1] if len(new) > 1 else new[0]
             
     output_df['Tool'] = ["clinical"]
+    output_df['sample_type'] = [sample_type]
     
     return output_df
+
+def sort_hla_pairs(df):
+    # Make a copy to avoid modifying the original
+    sorted_df = df.copy()
+    
+    # Define the allele pairs to be sorted
+    pairs = [
+        ('HLA_A-1', 'HLA_A-2'),
+        ('HLA_B-1', 'HLA_B-2'),
+        ('HLA_C-1', 'HLA_C-2'),
+        ('DQA1-1', 'DQA1-2'),
+        ('DQB1-1', 'DQB1-2'),
+        ('DRB1-1', 'DRB1-2')
+    ]
+    
+    # For each row, sort each pair of columns alphabetically
+    for idx, row in sorted_df.iterrows():
+        for col1, col2 in pairs:
+            # Skip if either column doesn't exist in this row
+            if col1 not in row.index or col2 not in row.index:
+                continue
+                
+            # Skip if both values are missing
+            if pd.isna(row[col1]) and pd.isna(row[col2]):
+                continue
+            
+            # If only one value exists, keep it where it is
+            if pd.isna(row[col1]) or pd.isna(row[col2]):
+                continue
+                
+            # If both values exist, sort them alphabetically
+            if row[col1] > row[col2]:  # Swap if first is alphabetically greater
+                sorted_df.at[idx, col1], sorted_df.at[idx, col2] = row[col2], row[col1]
+    
+        return sorted_df
 
         
 def main():
@@ -165,7 +192,7 @@ def main():
         phlat_tumor = process_phlat(f"{hla_typing}/phlat_tumor_HLA.sum", "tumor")
         
         if os.path.isfile(f"{hla_typing}/clinical_calls.txt"):
-            clincal = process_clinical(f"{hla_typing}/clinical_calls.txt")
+            clincal = process_clinical(f"{hla_typing}/clinical_calls.txt", "normal")
             df = pd.concat([optitype_normal, optitype_tumor, phlat_normal, phlat_tumor, clincal])
         else:
             df = pd.concat([optitype_normal, optitype_tumor, phlat_normal, phlat_tumor])
@@ -191,18 +218,19 @@ def main():
             
     first_column = df.pop('sample_type') 
     df.insert(0, 'sample_type', first_column) 
-    print(df)
     
     first_column = df.pop('Tool') 
     df.insert(0, 'Tool', first_column) 
-    print(df)
+    
+    sorted_df = sort_hla_pairs(df)
+    print(sorted_df)
     
     if args.WB:
-        df.to_csv(f"{args.WB}/../manual_review/hla_comparison.tsv", sep='\t', index=False)
+        sorted_df.to_csv(f"{args.WB}/../manual_review/hla_comparison.tsv", sep='\t', index=False)
     if args.o:
-        df.to_csv(f"{args.o}/hla_comparison.tsv", sep='\t', index=False)
+        sorted_df.to_csv(f"{args.o}/hla_comparison.tsv", sep='\t', index=False)
     else:
-        df.to_csv("hla_comparison.tsv", sep='\t', index=False)
+        sorted_df.to_csv("hla_comparison.tsv", sep='\t', index=False)
     
 
 if __name__ == "__main__":

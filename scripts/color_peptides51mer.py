@@ -42,6 +42,14 @@ def parse_arguments():
                         help='The path to the Peptides 51 mer', required=True)
     parser.add_argument('-samp',
                         help='The name of the sample', required=True)
+    parser.add_argument('-cIIC50',
+                        help='Maximum classI IC50 score to annotate', default=1000)
+    parser.add_argument('-cIpercent',
+                        help='Maximum classI percentile  to annotate', default=2)
+    parser.add_argument('-cIIIC50',
+                        help='Maximum classII IC50 score to annotate', default=0)
+    parser.add_argument('-cIIpercent',
+                        help='Maximum classII percentile  to annotate', default=2)
     parser.add_argument('-o',
                         help='the path to output folder')
 
@@ -49,8 +57,9 @@ def parse_arguments():
 
 
 def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
-                              classI_ic50, classI_percentile, classII_percentile, 
-                              classI_transcript, classII_transcript):
+                              classI_ic50, classI_percentile, classII_ic50, classII_percentile, 
+                              classI_transcript, classII_transcript, 
+                              cIIC50_threshold, cIpercentile_threshold, cIIIC50_threshold, cIIpercent_threshold):
 
     peptide_sequence = [] # Create a list to hold all AA of the 51mer
 
@@ -82,7 +91,7 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
     # set those positions to red
     # if median affinity < 1000 nm OR percentile < 2%
     j = 0
-    if float(classI_ic50) < 1000 or float(classI_percentile) < 2:
+    if float(classI_ic50) < cIIC50_threshold or float(classI_percentile) < cIpercentile_threshold:
         for i in range(len(peptide_sequence)):
             if j < len(positions) and i == positions[j]:
                 peptide_sequence[i].color = True
@@ -106,7 +115,7 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
         # Set class II to bold
         # if percentile < 2% 
         j = 0
-        if float(classII_percentile) < 2:
+        if float(classII_percentile) < cIIpercent_threshold or float(classII_ic50) < cIIIC50_threshold:
             for i in range(len(peptide_sequence)):
                 if j < len(positions) and i == positions[j]:
                     peptide_sequence[i].bold = True
@@ -123,12 +132,13 @@ def set_underline(peptide_sequence, mutant_peptide_pos, row_ID):
     classI_position = 0
 
     # Determine if frameshift mutation by seraching for = '-'
-    if '-' in mutant_peptide_pos:
-        positions = mutant_peptide_pos.split("-")
+    if ',' in mutant_peptide_pos:
+        positions = mutant_peptide_pos.split(",")
         start_position = int(positions[0])
         end_position = int(positions[1])
-
         frameshift = True
+    elif mutant_peptide_pos == 'nan': 
+        return
     else:
         mutant_peptide_pos = int(mutant_peptide_pos)
 
@@ -221,7 +231,7 @@ def create_stylized_sequence(peptide_sequence):
 
 def main():
     args = parse_arguments()
-
+    
     # read in classI and class II
     peptides_51mer = pd.read_excel(args.p)
 
@@ -245,7 +255,8 @@ def main():
         classI_ic50 = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class I IC50 MT'].values[0]
         # classI percentile
         classI_percentile = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class I %ile MT'].values[0]
-        # classII IC50 -- not used to determine sequence coloring
+        # classII IC50
+        classII_ic50 = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class II IC50 MT'].values[0]
         # classII percentile
         classII_percentile = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class II %ile MT'].values[0]
         # classI transcript
@@ -268,8 +279,9 @@ def main():
 
             # make sequence the list of objects
             peptide_sequence = annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
-                                                         classI_ic50, classI_percentile, classII_percentile,
-                                                         classI_transcript, classII_transcript)
+                                                         classI_ic50, classI_percentile, classII_ic50, classII_percentile,
+                                                         classI_transcript, classII_transcript,
+                                                         args.cIIC50, args.cIpercent, args.cIIIC50, args.cIIpercent)
 
             # actaully lets break class I and classII into two steps and handle the mutated nucleotide in class I function
             # it should be basically like at that position in the class I set 
