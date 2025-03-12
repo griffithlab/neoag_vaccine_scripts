@@ -1,5 +1,6 @@
 import argparse
 import csv
+import numpy as np
 import pandas as pd
 import sys
 
@@ -101,13 +102,25 @@ def get_values(qc, normal_dna, tumor_dna, tumor_rna, unalgined_normal_dna, unalg
     # THIS DOES NOT WORK ALL THE TIME
     # CHANGE TO JUST GRAB FROM THE FIRST COLUMN
     total_number_reads_normal = unalgined_normal_dna.loc[unalgined_normal_dna["Sample Name"] == "Total Number of Reads"].values[0]
-    qc.loc[(qc["Criteria"] == "TOTAL_READS") & (qc["File"] == "normal DNA"), "Value"] = total_number_reads_normal[1]
+    total_number_reads_normal = np.delete(total_number_reads_normal, 0)
+    total_number_reads_normal_uniq = list(set(total_number_reads_normal))
+    total_number_reads_normal_uniq = [int(x) for x in total_number_reads_normal_uniq]
+    total_reads_normal = sum(total_number_reads_normal_uniq)
+    qc.loc[(qc["Criteria"] == "TOTAL_READS") & (qc["File"] == "normal DNA"), "Value"] = total_reads_normal
 
     total_number_reads_tumor = unalgined_tumor_dna.loc[unalgined_tumor_dna["Sample Name"] == "Total Number of Reads"].values[0]
-    qc.loc[(qc["Criteria"] == "TOTAL_READS") & (qc["File"] == "tumor DNA"), "Value"] = total_number_reads_tumor[1]
+    total_number_reads_tumor = np.delete(total_number_reads_tumor, 0)
+    total_number_reads_tumor_uniq = list(set(total_number_reads_tumor))
+    total_number_reads_tumor_uniq = [int(x) for x in total_number_reads_tumor_uniq]
+    total_reads_tumor = sum(total_number_reads_tumor_uniq)
+    qc.loc[(qc["Criteria"] == "TOTAL_READS") & (qc["File"] == "tumor DNA"), "Value"] = total_reads_tumor
 
     total_number_reads_tumor_rna = unalgined_tumor_rna.loc[unalgined_tumor_rna["Sample Name"] == "Total Number of Reads"].values[0]
-    qc.loc[(qc["Criteria"] == "TOTAL_READS") & (qc["File"] == "tumor RNA"), "Value"] = total_number_reads_tumor_rna[1]
+    total_number_reads_tumor_rna = np.delete(total_number_reads_tumor_rna, 0)
+    total_number_reads_tumor_rna_uniq = list(set(total_number_reads_tumor_rna))
+    total_number_reads_tumor_rna_uniq = [int(x) for x in total_number_reads_tumor_rna_uniq]
+    total_reads_tumor_rna = sum(total_number_reads_tumor_rna_uniq)
+    qc.loc[(qc["Criteria"] == "TOTAL_READS") & (qc["File"] == "tumor RNA"), "Value"] = total_reads_tumor_rna
 
     # Open the TSV file
     with open(somalier, 'r') as file:
@@ -156,6 +169,8 @@ def evaluate_thresholds(qc):
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
+                
+            
 
         if (row["File"] == "tumor DNA") and (row["Criteria"] == "TOTAL_READS"):
             
@@ -284,6 +299,7 @@ def evaluate_thresholds(qc):
             
 
     return qc
+    
 
 
 def main():
@@ -307,7 +323,7 @@ def main():
         normal_dna = pd.read_csv(args.WB + final_result + '/qc/fda_metrics/aligned_normal_dna/aligned_normal_dna_table2.csv', names=["Criteria", "Value"])
 
     # Reshaping some dataframe for join
-    # maybe this could be a function since it is done three timmes
+    # maybe this could be a function since it is done three times
     normal_dna.loc[(normal_dna["Criteria"] == "Total Mapped Reads (%)"), "Criteria"] = "PCT_PF_READS_ALIGNED" # rename column so join works
     normal_dna['Value'] = normal_dna['Value'].str.rstrip(' (%)') # Remove  (%)
 
@@ -328,11 +344,12 @@ def main():
     tumor_rna.loc[(tumor_rna["Criteria"] == "Total mapped reads (%)"), "Criteria"] = "PCT_PF_READS_ALIGNED" # rename column so join works
     tumor_rna['Value'] = tumor_rna['Value'].str.rstrip(' (%)') # Remove  (%)
 
+    # We are only using the unaligned values to get the total number of reads per sample
+    # Is there are multiple files these are listed in separate columns
     if args.una_n_dna:
         unalgined_normal_dna = pd.read_csv(args.una_n_dna)
     else:
         unalgined_normal_dna = pd.read_csv(args.WB + final_result + '/qc/fda_metrics/unaligned_normal_dna/unaligned_normal_dna_table1.csv')
-
     if args.una_t_dna:
         unalgined_tumor_dna = pd.read_csv(args.una_t_dna)
     else:
@@ -374,8 +391,15 @@ def main():
     qc = evaluate_thresholds(qc)
 
     qc = qc.sort_values('Criteria', ignore_index=True)
+    
+    pd.options.display.float_format = '{:.3f}'.format
+    
+    # First identify the TOTAL_READS rows
+    total_reads_mask = qc['Criteria'] == 'TOTAL_READS'
 
-
+    # Format these rows with commas and no decimal places
+    qc.loc[total_reads_mask, 'Value'] = qc.loc[total_reads_mask, 'Value'].apply(lambda x: '{:,.0f}'.format(x))
+    
 
     if args.WB:
         qc.to_csv(args.WB +  '/../manual_review/fda_quality_thresholds_report.tsv', sep="\t", index=False)
