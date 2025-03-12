@@ -15,7 +15,7 @@ Pull the basic data qc from various files. This script will output a file final_
 mkdir $WORKING_BASE/../manual_review
 cd $WORKING_BASE/../manual_review
 
-bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts)" /bin/bash
+bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts:version7)" /bin/bash
 python3 /opt/scripts/get_neoantigen_qc.py -WB $WORKING_BASE -f final_results --yaml $WORKING_BASE/yamls/$CLOUD_YAML
 ```
 
@@ -82,14 +82,17 @@ exit
 To generate files needed for manual review, save the pVAC results from the Immunogenomics Tumor Board Review meeting as $SAMPLE.revd.Annotated.Neoantigen_Candidates.xlsx (Note: if the file is not saved under this exact name the below command will need to be modified).
 
 ```
-bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts)" /bin/bash
+export PATIENT_ID=TWJF-5120-28
+
+bsub -Is -q oncology-interactive -G $GROUP -a "docker(griffithlab/neoang_scripts:version7)" /bin/bash
+
 cd $WORKING_BASE
+mkdir ../manual_review
 
-export GCS_CASE_NAME="100-049-BG004667"
+python3 /opt/scripts/generate_reviews_files.py -a ../itb-review-files/*.tsv -c ../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -variants final_results/variants.final.annotated.tsv -classI final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv -samp $PATIENT_ID -o ../manual_review/
 
-python3 /opt/scripts/generate_reviews_files.py -a ../itb-review-files/*.xlsx -c ../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -classI final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv -samp $GCS_CASE_NAME -o ../manual_review/
-
-python3 /opt/scripts/color_peptides51mer.py -p ../manual_review/*Peptides_51-mer.xlsx -samp $GCS_CASE_NAME -o ../manual_review/
+# Note: You can change the classI and classI IC50/percentile cutoff for coloring
+python3 /opt/scripts/color_peptides51mer.py -p ../manual_review/*Peptides_51-mer.xlsx -probPos C -samp $PATIENT_ID -o ../manual_review/
 ```
 
 ## Creating Case Final Report locally
@@ -103,24 +106,19 @@ A written case final report will be created which includes a Genomics Review Rep
 Pull the basic data qc from various files. This script will output a file final_results/qc_file.txt and also print the summary to to screen.
 
 ```
-mkdir $WORKING_BASE/../manual_review
-cd $WORKING_BASE/../manual_review
-
-docker pull griffithlab/neoang_scripts:latest
-docker run -it -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud --env $WORKING_BASE griffithlab/neoang_scripts:latest /bin/bash
-
 cd $WORKING_BASE
 
-python3 /opt/scripts/get_neoantigen_qc.py -WB $WORKING_BASE -f final_results --yaml $WORKING_BASE/yamls/$CLOUD_YAML
-```
+docker run -it --env HOME --env WORKING_BASE -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud griffithlab/neoang_scripts:version7 /bin/bash
 
-### FDA Quality Thresholds
+cd $WORKING_BASE
+mkdir ../manual_review
+cd ../manual_review
 
-This script will output a file final_results/fda_quality_thresholds_report.tsv and also print the summary to to screen.
-
-```
+python3 /opt/scripts/get_neoantigen_qc.py -WB $WORKING_BASE -f final_results --yaml $HOME/yamls/${GCS_CASE_NAME}_immuno_cloud-WDL.yaml
 python3 /opt/scripts/get_FDA_thresholds.py -WB  $WORKING_BASE -f final_results
+python3 /opt/scripts/hla_comparison.py -WB $WORKING_BASE
 exit
+
 ```
 
 ### After Immunogenomics Tumor Board Review
@@ -173,14 +171,15 @@ exit
 To generate files needed for manual review, save the pVAC results from the Immunogenomics Tumor Board Review meeting as $SAMPLE.revd.Annotated.Neoantigen_Candidates.xlsx (Note: if the file is not saved under this exact name the below command will need to be modified).
 
 ```
-cd $WORKING_BASE/../manual_review
+docker pull griffithlab/neoang_scripts
+docker run -it --env WORKING_BASE --env PATIENT_ID -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud griffithlab/neoang_scripts:version7 /bin/bash
 
-docker pull griffithlab/neoang_scripts:latest
-docker run -it -v $HOME/:$HOME/ -v $HOME/.config/gcloud:/root/.config/gcloud --env $WORKING_BASE griffithlab/neoang_scripts:latest /bin/bash
+cd $WORKING_BASE
+mkdir manual_review
 
-export SAMPLE="TWJF-10146-0029"
+python3 /opt/scripts/generate_reviews_files.py -a itb-review-files/*.tsv -c generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -classI final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv -samp $PATIENT_ID -o manual_review/
 
-python3 /opt/scripts/setup_review.py -WB $WORKING_BASE -a ../itb-review-files/*.xlsx -c $WORKING_BASE/../generate_protein_fasta/candidates/annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv -samp $SAMPLE  -classI $WORKING_BASE/final_results/pVACseq/mhc_i/*.all_epitopes.aggregated.tsv -classII $WORKING_BASE/final_results/pVACseq/mhc_ii/*.all_epitopes.aggregated.tsv 
+python3 /opt/scripts/color_peptides51mer.py -p manual_review/*Peptides_51-mer.xlsx -samp $PATIENT_ID -o manual_review/
 ```
 Open colored_peptides51mer.html and copy the table into an excel spreadsheet. The formatting should remain. Utilizing the Annotated.Neoantigen_Candidates and colored Peptides_51-mer for manual review.
 
@@ -190,41 +189,49 @@ Open colored_peptides51mer.html and copy the table into an excel spreadsheet. Th
 
 ```
 python3  /opt/scripts/get_neoantigen_qc.py --help
-usage: get_neoantigen_qc.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--concordance CONCORDANCE] [--contam_n CONTAM_N] [--contam_t CONTAM_T]
-                            [--rna_metrics RNA_METRICS] [--strand_check STRAND_CHECK] --yaml YAML [--fin_variants FIN_VARIANTS]
+usage: get_neoantigen_qc.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA]
+                            [--concordance CONCORDANCE] [--contam_n CONTAM_N] [--contam_t CONTAM_T]
+                            [--rna_metrics RNA_METRICS] [--strand_check STRAND_CHECK] --yaml YAML
+                            [--fin_variants FIN_VARIANTS]
 
 Get the stats for the basic data QC review in the neoantigen final report.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
+  -WB WB                The path to the gcp_immuno folder of the trial you wish to run the script on, defined as
+                        WORKING_BASE in envs.txt
   -f FIN_RESULTS, --fin_results FIN_RESULTS
                         Name of the final results folder in gcp immuno
-  --n_dna N_DNA         file path for aligned normal dna FDA report table
-  --t_dna T_DNA         file path for aligned tumor dna FDA report table
-  --t_rna T_RNA         file path for aligned tumor rna FDA report table
+  --n_dna N_DNA         File path for aligned normal DNA FDA report table
+  --t_dna T_DNA         File path for aligned tumor DNA FDA report table
+  --t_rna T_RNA         File path for aligned tumor RNA FDA report table
   --concordance CONCORDANCE
-                        file path for Somalier results for sample tumor/normal sample relatedness
-  --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
-  --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor sample
+                        File path for Somalier results for sample tumor/normal sample relatedness
+  --contam_n CONTAM_N   File path for VerifyBamID results for contamination of the normal sample
+  --contam_t CONTAM_T   File path for VerifyBamID results for contamination of the tumor sample
   --rna_metrics RNA_METRICS
+                        File path for RNA metrics
   --strand_check STRAND_CHECK
-  --yaml YAML
+                        File path for strandness check
+  --yaml YAML           File path for the pipeline YAML file
   --fin_variants FIN_VARIANTS
+                        File path for the final variants file
 ```
 
 ## GET FDA metrics
 
 ```
 python3  /opt/scripts/get_FDA_thresholds.py --help
-usage: get_FDA_thresholds.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA] [--una_n_dna UNA_N_DNA] [--una_t_dna UNA_T_DNA] [--una_t_rna UNA_T_RNA]
+usage: get_FDA_thresholds.py [-h] [-WB WB] [-f FIN_RESULTS] [--n_dna N_DNA] [--t_dna T_DNA] [--t_rna T_RNA]
+                             [--una_n_dna UNA_N_DNA] [--una_t_dna UNA_T_DNA] [--una_t_rna UNA_T_RNA]
                              [--somalier SOMALIER] [--contam_n CONTAM_N] [--contam_t CONTAM_T]
 
 Get FDA qc stats from various files and determine if they pass or fail.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
+  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as
+                        WORKING_BASE in envs.txt
   -f FIN_RESULTS, --fin_results FIN_RESULTS
                         Name of the final results folder in gcp immuno
   --n_dna N_DNA         file path for aligned normal dna FDA report table
@@ -236,20 +243,24 @@ optional arguments:
                         file path for unaligned tumor dna FDA report table
   --una_t_rna UNA_T_RNA
                         file path for unaligned tumor rna FDA report table
-  --somalier SOMALIER   file path for Somalier results for sample tumor/normal sample relatedness (concordance.somalier.pairs.tsv)
+  --somalier SOMALIER   file path for Somalier results for sample tumor/normal sample relatedness
+                        (concordance.somalier.pairs.tsv)
   --contam_n CONTAM_N   file path for VerifyBamID results for contamination the normal sample
   --contam_t CONTAM_T   file path for VerifyBamID results for contamination the tumor dna sample
 ```
+
 ## HLA Comparison
 ```
 python3  /opt/scripts/hla_comparison.py --help
-usage: hla_comparison.py [-h] [-WB WB] [-f FIN_RESULTS] [--optitype_n OPTITYPE_N] [--optitype_t OPTITYPE_T] [--phlat_n PHLAT_N] [--phlat_t PHLAT_T] [--clinical CLINICAL] [--o O]
+usage: hla_comparison.py [-h] [-WB WB] [-f FIN_RESULTS] [--optitype_n OPTITYPE_N] [--optitype_t OPTITYPE_T]
+                         [--phlat_n PHLAT_N] [--phlat_t PHLAT_T] [--clinical CLINICAL] [--o O]
 
 Compare HLA alleles called by phlat, opitype, and clincal data if available.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -WB WB                The path to the gcp_immuno folder of the trial you wish to run the script on, defined as WORKING_BASE in envs.txt
+  -WB WB                The path to the gcp_immuno folder of the trial you wish to run the script on, defined as
+                        WORKING_BASE in envs.txt
   -f FIN_RESULTS, --fin_results FIN_RESULTS
                         Name of the final results folder in gcp immuno
   --optitype_n OPTITYPE_N
@@ -262,41 +273,25 @@ optional arguments:
   --o O                 Output folder
 ```
 
-## Setup Review
-
-The set up review script runs two other scripts: generate_reviews_files.py and color_peptides51mer.py. The first sets up the Annotated.Neoantige.Canidates spreadsheet and the Peptides 51mer spreadsheet. The second script colors the Peptides 51mer sequences and outputs an html table whihc can be copied into a Microsoft spreadsheet.
-
-```
-python3  /opt/scripts/setup_review.py --help
-usage: setup_review.py [-h] [-WB WB] [-samp SAMP] [-a A] [-c C] -classI CLASSI -classII CLASSII
-
-Sets up manuel review files
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -WB WB            the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
-  -samp SAMP        Name of the sample
-  -a A              Path to ITB Reviewed Candidates
-  -c C              Path to annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv
-  -classI CLASSI    Path to classI all_epitopes.aggregated.tsv
-  -classII CLASSII  Path to classII all_epitopes.aggregated.tsv
-
-```
-
 ## Generate Review Files
 
 ```
 python3  /opt/scripts/generate_reviews_files.py --help
-usage: generate_reviews_files.py [-h] [-a A] [-c C] [-samp SAMP] [-WB WB] [-f FIN_RESULTS]
+usage: generate_reviews_files.py [-h] -a A -c C [-variants VARIANTS] -classI CLASSI -classII CLASSII -samp SAMP
+                                 [-o O] [-f FIN_RESULTS]
 
 Create the file needed for the neoantigen manuel review
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a A                  The path to the ITB Reviewed Candidates
-  -c C                  The path to annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv from the generate_protein_fasta script
+  -a A                  The path to the ITB Reviewed Candidates tsv file
+  -c C                  The path to candidates annotated_filtered.vcf-pass-51mer.fa.manufacturability.tsv from
+                        the generate_protein_fasta script
+  -variants VARIANTS    The path to the variants.final.annotated.tsv file generated by the pipeline
+  -classI CLASSI        The path to the classI all_epitopes.aggregated.tsv used in pVACseq
+  -classII CLASSII      The path to the classII all_epitopes.aggregated.tsv used in pVACseq
   -samp SAMP            The name of the sample
-  -WB WB                the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
+  -o O                  the path to output folder
   -f FIN_RESULTS, --fin_results FIN_RESULTS
                         Name of the final results folder in gcp immuno
 ```
@@ -305,48 +300,24 @@ optional arguments:
 
 ```
 python3  /opt/scripts/color_peptides51mer.py --help
-usage: color_peptides51mer.py [-h] -p P -classI CLASSI -classII CLASSII [-WB WB] [-samp SAMP]
+usage: color_peptides51mer.py [-h] -p P -samp SAMP [-cIIC50 CIIC50] [-cIpercent CIPERCENT] [-cIIIC50 CIIIC50]
+                              [-cIIpercent CIIPERCENT] [-probPos [PROBPOS [PROBPOS ...]]] [-o O]
 
 Color the 51mer peptide
 
 optional arguments:
-  -h, --help        show this help message and exit
-  -p P              The path to the Peptides 51 mer
-  -classI CLASSI    The path to the classI all_epitopes.aggregated.tsv used in pVACseq
-  -classII CLASSII  The path to the classII all_epitopes.aggregated.tsv used in pVACseq
-  -WB WB            the path to the gcp_immuno folder of the trial you wish to tun script on, defined as WORKING_BASE in envs.txt
-  -samp SAMP        Name of the sample
+  -h, --help            show this help message and exit
+  -p P                  The path to the Peptides 51 mer
+  -samp SAMP            The name of the sample
+  -cIIC50 CIIC50        Maximum classI IC50 score to annotate
+  -cIpercent CIPERCENT  Maximum classI percentile to annotate
+  -cIIIC50 CIIIC50      Maximum classII IC50 score to annotate
+  -cIIpercent CIIPERCENT
+                        Maximum classII percentile to annotate
+  -probPos [PROBPOS [PROBPOS ...]]
+                        problematic position to make large
+  -o O                  the path to output folder
 ```
 
-## Bold Class II
 
-Bold Class II is not utilized in the current workflow of setting up the manual review. However, it is included as an example of how adding stylization (in this case bold) to certain characters within individual cells of spreadsheets can be accomplished using BeautifulSoup. If you wanted to only bold certain characters (or do any stylzing such as coloring), you can insert a style tag directly into the HTML. However, if you wanted to do formatting inside formatting such as in these review files where there needs to some characters which are red, bold, underlined, or any combination if thise mentioned, BeuaitfulSoup cannot accomplish this. 
 
-```
-python3 /opt/scripts/bold_classII.py --help
-usage: bold_classII.py [-h] -p P -classI CLASSI -classII CLASSII -o O
-
-Bold the class II pepetides
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -p P              The path to the Peptides 51 mer
-  -classI CLASSI    The path to the classI all_epitopes.aggregated.tsv used in pVACseq
-  -classII CLASSII  The path to the classII all_epitopes.aggregated.tsv used in pVACseq
-  -o O              Output location
-
-```
-
-## Notes for Building and Testing
-
-Make sure to build the docker on compute1, otherwise the docker will not work on compute1. The command I use looks like this:
-
-Steps for building and testing a docker:
-1. Build to testing and test
-2. Build to a new version (for record-keeping)
-3. Build to latest
-
-I know this seems tedious but you will mess something up and your docker will be broken.
-```
-bsub -G compute-oncology -q general-interactive -Is -a 'docker_build(griffithlab/neoang_scripts:testing)' -- --tag griffithlab/neoang_scripts:testing .
-```
