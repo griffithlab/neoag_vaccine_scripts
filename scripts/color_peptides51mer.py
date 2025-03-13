@@ -38,7 +38,7 @@ def parse_arguments():
     # Parse command line arugments
     parser = argparse.ArgumentParser(description='Color the 51mer peptide')
 
-    parser.add_argument('-p',
+    parser.add_argument('-peptides',
                         help='The path to the Peptides 51 mer', required=True)
     parser.add_argument('-samp',
                         help='The name of the sample', required=True)
