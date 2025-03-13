@@ -47,7 +47,7 @@ def parse_arguments():
     parser.add_argument('-cIpercent',
                         help='Maximum classI percentile  to annotate', default=2, type=float)
     parser.add_argument('-cIIIC50',
-                        help='Maximum classII IC50 score to annotate', default=0, type=float)
+                        help='Maximum classII IC50 score to annotate', default=500, type=float)
     parser.add_argument('-cIIpercent',
                         help='Maximum classII percentile  to annotate', default=2, type=float)
     parser.add_argument('-probPos', nargs='*', 
