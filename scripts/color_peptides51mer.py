@@ -43,13 +43,13 @@ def parse_arguments():
     parser.add_argument('-samp',
                         help='The name of the sample', required=True)
     parser.add_argument('-cIIC50',
-                        help='Maximum classI IC50 score to annotate', default=1000)
+                        help='Maximum classI IC50 score to annotate', default=1000, type=float)
     parser.add_argument('-cIpercent',
-                        help='Maximum classI percentile  to annotate', default=2)
+                        help='Maximum classI percentile  to annotate', default=2, type=float)
     parser.add_argument('-cIIIC50',
-                        help='Maximum classII IC50 score to annotate', default=0)
+                        help='Maximum classII IC50 score to annotate', default=0, type=float)
     parser.add_argument('-cIIpercent',
-                        help='Maximum classII percentile  to annotate', default=2)
+                        help='Maximum classII percentile  to annotate', default=2, type=float)
     parser.add_argument('-probPos', nargs='*', 
                         help='problematic position to make large', default='')
     parser.add_argument('-o',
