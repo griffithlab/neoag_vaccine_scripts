@@ -231,20 +231,6 @@ def main():
     class_sequences = class_sequences.drop(columns=['ID'])
 
     merged_peptide_51mer = pd.merge(peptides, class_sequences, on='51mer ID', how='left')
-
-    # Fill in the Restricting HLA Allele Column
-    for index, row in merged_peptide_51mer.iterrows():
-        restricting_alleles = ''
-        if (float(row['Class I IC50 MT']) < 1000 or float(row['Class I %ile MT']) < 2) and float(row['Class II %ile MT']) < 2: # class I median affinity < 1000 nm OR percentile < 2%
-            restricting_alleles = row['Class I Allele'] + '/' + row['Class II Allele']
-        elif float(row['Class I IC50 MT']) < 1000 or float(row['Class I %ile MT']) < 2: # classII percentile < 2%
-            restricting_alleles = row['Class I Allele']
-        elif float(row['Class II %ile MT']) < 2:
-            restricting_alleles = row['Class II Allele']
-        else:
-            restricting_alleles = ''
-    
-        merged_peptide_51mer.at[index, 'RESTRICTING HLA ALLELE'] = restricting_alleles
     
     merged_peptide_51mer['sorting id'] = merged_peptide_51mer['full ID'].apply(extract_info) # creating a ID to sort reviewed canidates by the order of the 51mer
     merged_peptide_51mer = make_column_unique(merged_peptide_51mer, 'sorting id') # make sure every sorting id is unique

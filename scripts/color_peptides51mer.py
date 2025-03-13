@@ -240,7 +240,23 @@ def main():
     args = parse_arguments()
     
     # read in classI and class II
-    peptides_51mer = pd.read_excel(args.p)
+    peptides_51mer = pd.read_excel(args.peptides)
+ 
+    # Fill in the Restricting HLA Allele Column
+    for index, row in peptides_51mer.iterrows():
+        restricting_alleles = ''
+        if (float(row['Class I IC50 MT']) < args.cIIC50 or float(row['Class I %ile MT']) <  args.cIpercent):
+            restricting_alleles = row['Class I Allele']
+        
+        if (float(row['Class I IC50 MT']) < args.cIIIC50 or float(row['Class I %ile MT']) <  args.cIIpercent):
+            
+            if restricting_alleles != '':
+                restricting_alleles = restricting_alleles + '/' + row['Class II Allele']
+            else:
+                 restricting_alleles =  row['Class II Allele']
+        
+        peptides_51mer.at[index, 'RESTRICTING HLA ALLELE'] = restricting_alleles
+                
 
     # convert peptide 51mer to HTML
     peptides_51mer_html = peptides_51mer.to_html(index=False) # convert to html
