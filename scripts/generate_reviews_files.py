@@ -173,11 +173,14 @@ def main():
         
         if not 'missense' in parts:
             if 'FS' in parts:
+                # MT.239.KIF7.ENST00000394412.8.FS.405-410CGCGCACTCGGCGCCCAG/C
+                # KIF7.ENST00000394412.FS405-410
                 # If 'FS' is present, remove non-digit characters after the last period
                 last_part = ''.join(filter(is_valid_char, parts[-1]))
                 modified_id = '.'.join(parts[:-1]) + last_part
             elif 'inframe_del' in parts:
-                # WDFY4.ENST00000360890.6.LK620-621-
+                # MT.328.DNAAF3.ENST00000391720.8.inframe_del.585-589KTGV*/R
+                # DNAAF3.ENST00000391720.8.KTGV*538-542R
                 last_part = parts[-1]
                 position = re.match(r'[^a-zA-Z]*', last_part).group()
                 aa = re.search(r'[^0-9-]+.*', last_part).group()
@@ -185,11 +188,17 @@ def main():
                 modified_id = '.'.join(parts[:3])
                 aa_change = aa_parts[0] + position + aa_parts[1]
                 modified_id = modified_id + "." + aa_change
+            elif 'inframe_ins' in parts:
+                # MT.249.ZCCHC14.ENST00000268616.9.inframe_ins.769H/HH
+                # ZCCHC14.ENST00000268616.9.H769HH
+                modified_id = '.'.join(parts[:3] + parts[4:])
             else:
                 print("Non missense candidate not accounted for!")
                 print(parts)     
         else:
             # If 'missense' or other labels are present, remove them
+            # MT.244.ZP2.ENST00000574002.1.missense.84D/Y
+            # ZP2.ENST00000574002.1.84D/Y
             modified_id = '.'.join(parts[:3] + parts[4:])
         
         return modified_id
