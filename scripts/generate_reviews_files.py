@@ -195,6 +195,7 @@ def main():
                 # ZCCHC14.ENST00000268616.9.H769HH
                 modified_id = '.'.join(parts[:3] + parts[4:])
             else:
+                modified_id = '.'.join(parts[:3] + parts[4:])
                 print("Non missense candidate not accounted for!")
                 print(parts)     
         else:
@@ -210,8 +211,8 @@ def main():
     #peptides['51mer ID'] = peptides['51mer ID'].apply(lambda x: '.'.join(x.split('.')[:3]) + '.' + '.'.join(x.split('.')[4:])) # removes the variant label
     peptides['51mer ID'] = peptides['51mer ID'].apply(modify_id)
 
-    classI = pd.read_csv(args.classI, sep="\t")
-    classII = pd.read_csv(args.classII, sep="\t")
+    classI = pd.read_csv(args.classI, sep="\t", low_memory=False)
+    classII = pd.read_csv(args.classII, sep="\t",low_memory=False)
     if args.all_epitopes:
         classI.rename(columns = {"MT Epitope Seq":"Best Peptide Class I", "HLA Allele":"Class I Allele", 
                                  "Median MT IC50 Score":"Class I IC50 MT", "Median MT Percentile":"Class I %ile MT", 
@@ -220,10 +221,15 @@ def main():
                                   "Median MT IC50 Score":"Class II IC50 MT", "Median MT Percentile":"Class II %ile MT", 
                                   "Transcript":"Class II Best Transcript"}, inplace=True)
         
-        classI['position AA Change'] = classI['Index'].split('.')[5]
+        classI['position AA Change'] = classI['Index'].apply(lambda x: x.split('.')[5] if isinstance(x, str) else None)
+        classII['position AA Change'] = classII['Index'].apply(lambda x: x.split('.')[5] if isinstance(x, str) else None)
+        
+        classI['Pos'] =  classI['Mutation Position']
+        classI['AA Change'] =  classI['Mutation']
+        
         classI['51mer ID'] = classI['Gene Name'] + '.' + classI['Class I Best Transcript'] + '.' + classI['position AA Change'] 
         class_sequences = pd.merge(classI[['Index', 'Best Peptide Class I', '51mer ID', 'Pos', 'AA Change', 'Class I Allele', "Class I IC50 MT", "Class I %ile MT", "Class I Best Transcript"]], 
-                                   classII[['Index', 'Best Peptide Class II', 'Class II Allele', "Class II IC50 MT", "Class II %ile MT", "Class II Best Transcript"]], on='ID', how='left')
+                                   classII[['Index', 'Best Peptide Class II', 'Class II Allele', "Class II IC50 MT", "Class II %ile MT", "Class II Best Transcript"]], on='Index', how='left')
         class_sequences = class_sequences.drop(columns=['Index'])
 
     else:
