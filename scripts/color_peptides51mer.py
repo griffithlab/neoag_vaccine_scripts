@@ -18,7 +18,7 @@ class AminoAcid:
         self.color = color
         self.underline = underline
         self.large = large
-        self.position = position 
+        self.position = position
         self.open_tag = open_tag
         self.close_tag = close_tag
 
@@ -50,7 +50,7 @@ def parse_arguments():
                         help='Maximum classII IC50 score to annotate', default=500, type=float)
     parser.add_argument('-cIIpercent',
                         help='Maximum classII percentile  to annotate', default=2, type=float)
-    parser.add_argument('-probPos', nargs='*', 
+    parser.add_argument('-probPos', nargs='*',
                         help='problematic position to make large', default='')
     parser.add_argument('-o',
                         help='the path to output folder')
@@ -58,9 +58,9 @@ def parse_arguments():
     return(parser.parse_args())
 
 
-def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
-                              classI_ic50, classI_percentile, classII_ic50, classII_percentile, 
-                              classI_transcript, classII_transcript, 
+def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
+                              classI_ic50, classI_percentile, classII_ic50, classII_percentile,
+                              classI_transcript, classII_transcript,
                               cIIC50_threshold, cIpercentile_threshold, cIIIC50_threshold, cIIpercent_threshold, probPos):
 
     peptide_sequence = [] # Create a list to hold all AA of the 51mer
@@ -68,10 +68,10 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
     # Make the sequence a list of AminoAcid objects
     for i in range(len(sequence)):
         new_AA = AminoAcid(sequence[i], False, False, False, False, -1, False, False)
-        
+
         if len(probPos) > 0 and sequence[i] in probPos:
             new_AA.large = True
-        
+
         peptide_sequence.append(new_AA)
 
     # CLASS I
@@ -89,7 +89,7 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
             break
         else:
             positions = []
-            
+
     # set those positions to red
     # if median affinity < 1000 nm OR percentile < 2%
     j = 0
@@ -100,7 +100,7 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
                 j+=1
 
     if classI_transcript == classII_transcript:
-        # CLASS II         
+        # CLASS II
         positions = []
         for i in range(len(peptide_sequence)):
             for j in range(len(classII_peptide)):
@@ -115,7 +115,7 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
             else:
                 positions = []
         # Set class II to bold
-        # if percentile < 2% 
+        # if percentile < 2%
         j = 0
         if float(classII_percentile) < cIIpercent_threshold or float(classII_ic50) < cIIIC50_threshold:
             for i in range(len(peptide_sequence)):
@@ -124,43 +124,46 @@ def annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
                     j+=1
     else:
         print("Note: ClassII transcript different then ClassI. ClassII peptide not bolded.")
-    
+
 
     return(peptide_sequence)
 
 def set_underline(peptide_sequence, mutant_peptide_pos, row_ID):
-
     frameshift = False
     classI_position = 0
 
-    # Determine if frameshift mutation by seraching for = '-'
-    if ',' in mutant_peptide_pos:
-        positions = mutant_peptide_pos.split(",")
-        start_position = int(positions[0])
-        end_position = int(positions[1])
-        frameshift = True
-    elif '-' in mutant_peptide_pos: # to account for older versions of pvacseq
-        positions = mutant_peptide_pos.split("-")
-        start_position = int(positions[0])
-        end_position = int(positions[1])
-        frameshift = True
-    elif mutant_peptide_pos == 'nan' or mutant_peptide_pos == "NaN": 
+    # Missing? just skip
+    if pd.isna(mutant_peptide_pos):
         return
+
+    # If it's numeric already (Int64/float), normalize to int
+    if isinstance(mutant_peptide_pos, (int, np.integer)):
+        mutant_peptide_pos = int(mutant_peptide_pos)
+    elif isinstance(mutant_peptide_pos, (float, np.floating)):
+        mutant_peptide_pos = int(mutant_peptide_pos)
     else:
-        mutant_peptide_pos = int(float(mutant_peptide_pos))
+        # String-like: handle ranges "5-9"/"5,9" and floats like "7.0"
+        s = str(mutant_peptide_pos).strip()
+        if s.lower() in {"na", "nan", "<na>", ""}:
+            return
+        if "," in s or "-" in s:
+            sep = "," if "," in s else "-"
+            a, b = s.split(sep, 1)
+            start_position = int(float(a))
+            end_position = int(float(b))
+            frameshift = True
+        else:
+            mutant_peptide_pos = int(float(s))
 
-
-
+    # --- existing logic below unchanged, except it now uses start/end if frameshift ---
     if frameshift:
         continue_underline = False
-        
         for i in range(len(peptide_sequence)):
-
             if peptide_sequence[i].color:
                 classI_position += 1
             else:
-                 classI_position = 0
-                 continue_underline = False
+                classI_position = 0
+                continue_underline = False
 
             if classI_position == start_position:
                 peptide_sequence[i].underline = True
@@ -170,19 +173,15 @@ def set_underline(peptide_sequence, mutant_peptide_pos, row_ID):
             elif classI_position == end_position:
                 peptide_sequence[i].underline = True
                 continue_underline = False
-            i+=1
     else:
         for i in range(len(peptide_sequence)):
-
             if peptide_sequence[i].color:
                 classI_position += 1
             else:
-                 classI_position = 0
-
+                classI_position = 0
             if classI_position == int(mutant_peptide_pos):
                 peptide_sequence[i].underline = True
-            i+=1
-        
+
 def set_span_tags(peptide_sequence):
 
     currently_bold = False
@@ -194,7 +193,7 @@ def set_span_tags(peptide_sequence):
     for nucleotide in peptide_sequence:
 
         if currently_bold != nucleotide.bold or currently_red != nucleotide.color or currently_underlined != nucleotide.underline or currently_large != nucleotide.large:
-            
+
             nucleotide.open_tag = True
 
             if inside_span:
@@ -203,13 +202,13 @@ def set_span_tags(peptide_sequence):
                 nucleotide.close_tag = False
 
 
-            currently_bold = nucleotide.bold 
+            currently_bold = nucleotide.bold
             currently_red = nucleotide.color
             currently_underlined = nucleotide.underline
             currently_large = nucleotide.large
 
             inside_span = True
-        
+
     return(peptide_sequence)
 
 def create_stylized_sequence(peptide_sequence):
@@ -221,7 +220,7 @@ def create_stylized_sequence(peptide_sequence):
         if nucleotide.open_tag or nucleotide.close_tag:
             if nucleotide.close_tag:
                 new_string += '</span>'
-                
+
             if nucleotide.open_tag:
                 new_string += '<span style="'
                 if nucleotide.bold:
@@ -240,25 +239,26 @@ def create_stylized_sequence(peptide_sequence):
 
 def main():
     args = parse_arguments()
-    
+
     # read in classI and class II
     peptides_51mer = pd.read_excel(args.peptides)
- 
+    peptides_51mer["Pos"] = pd.to_numeric(peptides_51mer["Pos"], errors="coerce").astype("Int64")
+
     # Fill in the Restricting HLA Allele Column
     for index, row in peptides_51mer.iterrows():
         restricting_alleles = ''
         if (float(row['Class I IC50 MT']) < args.cIIC50 or float(row['Class I %ile MT']) <  args.cIpercent):
             restricting_alleles = row['Class I Allele']
-        
-        if (float(row['Class I IC50 MT']) < args.cIIIC50 or float(row['Class I %ile MT']) <  args.cIIpercent):
-            
+
+        if (float(row['Class II IC50 MT']) < args.cIIIC50 or float(row['Class II %ile MT']) <  args.cIIpercent):
+
             if restricting_alleles != '':
                 restricting_alleles = restricting_alleles + '/' + row['Class II Allele']
             else:
                  restricting_alleles =  row['Class II Allele']
-        
+
         peptides_51mer.at[index, 'RESTRICTING HLA ALLELE'] = restricting_alleles
-                
+
 
     # convert peptide 51mer to HTML
     peptides_51mer_html = peptides_51mer.to_html(index=False) # convert to html
@@ -270,12 +270,13 @@ def main():
 
         search_string = row['51mer ID']
 
-        # classII sequence 
+        # classII sequence
         classII_peptide = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Best Peptide Class II'].values[0]
-        # classI sequence 
+        # classI sequence
         classI_peptide = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Best Peptide Class I'].values[0]
         # mutant peptide position
-        mutant_peptide_pos = str(peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Pos'].values[0])
+        # mutant_peptide_pos = str(peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Pos'].values[0])
+        mutant_peptide_pos = peptides_51mer.at[index, 'Pos']
         # classI IC50
         classI_ic50 = peptides_51mer.loc[peptides_51mer['51mer ID'] == search_string, 'Class I IC50 MT'].values[0]
         # classI percentile
@@ -296,25 +297,24 @@ def main():
         if tag_with_search_string and isinstance(classII_peptide, str):
 
             # Find the parent <tr> tag of the tag containing the search string
-            parent_tr = tag_with_search_string.find_parent('tr')    
+            parent_tr = tag_with_search_string.find_parent('tr')
             # Find the next two <td> tags
             next_td_tags = parent_tr.findChildren('td', limit=3)
-            
+
             sequence = next_td_tags[2].get_text()
 
             # make sequence the list of objects
-            peptide_sequence = annotate_every_nucleotide(sequence, classI_peptide, classII_peptide, 
+            peptide_sequence = annotate_every_nucleotide(sequence, classI_peptide, classII_peptide,
                                                          classI_ic50, classI_percentile, classII_ic50, classII_percentile,
                                                          classI_transcript, classII_transcript,
                                                          args.cIIC50, args.cIpercent, args.cIIIC50, args.cIIpercent, args.probPos)
 
             # actaully lets break class I and classII into two steps and handle the mutated nucleotide in class I function
-            # it should be basically like at that position in the class I set 
-            
+            # it should be basically like at that position in the class I set
             set_underline(peptide_sequence, mutant_peptide_pos, row['51mer ID'])
 
             set_span_tags(peptide_sequence) # pass by reference
-            
+
             print(row['51mer ID'])
             new_string = create_stylized_sequence(peptide_sequence)
 
@@ -340,7 +340,7 @@ def main():
         print()
 
     if args.o:
-        html_file_name = args.o + args.samp + ".Colored_Peptides.html" 
+        html_file_name = args.o + args.samp + ".Colored_Peptides.html"
     else:
         html_file_name  =  args.o + ".Colored_Peptides.html"
 
