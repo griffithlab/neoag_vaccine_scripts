@@ -291,9 +291,9 @@ def find_discrepancies(df):
 
 
 def print_discrepancies(discrepancy_df):
-    print("\n" + "=" * 80)
+    print("\n" + "#" * 80)
     print("HLA ALLELE DISCREPANCIES")
-    print("=" * 80)
+    print("#" * 80)
 
     if discrepancy_df.empty:
         print("No discrepancies found between tools.")
@@ -405,9 +405,9 @@ def main():
         consensus_path = f"{args.WB}/{args.fin_results}/hla_typing/consensus_calls.txt"
         class_i_alleles, class_ii_alleles = get_consensus_alleles(consensus_path)
         
-        print("\n" + "=" * 80)
+        print("\n" + "#" * 80)
         print("pVAC CONSENSUS ALLELES")
-        print("=" * 80)
+        print("#" * 80)
         
         if class_i_alleles:
             class_i_str = "ClassI consensus alleles used by pVAC predictions: " + ", ".join(class_i_alleles)
