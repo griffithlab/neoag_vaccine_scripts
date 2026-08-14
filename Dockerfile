@@ -1,6 +1,6 @@
 # bsub -G compute-oncology -q oncology-interactive -Is -a 'docker_build(griffithlab/neoang_scripts)' -- --tag griffithlab/neoang_scripts .
 
-FROM python:3.8-slim-buster
+FROM python:3.8-slim-bookworm
 
 RUN ["apt-get", "update"]
 RUN ["apt-get", "install", "-y", "vim"]
