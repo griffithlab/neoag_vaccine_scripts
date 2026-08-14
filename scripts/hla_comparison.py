@@ -2,13 +2,14 @@ import argparse
 import csv
 import pandas as pd
 import os.path
+import re
 
 # python3 scripts/hla_comparison.py -WB "/Users/evelynschmidt/Bioinformatics_tools/neoag_vaccine_scripts/test_data/gcp_immuno"
 
 # ---- PARSE ARGUMENTS -------------------------------------------------------
 def parse_arguments():
     """Parses command line arguments and enables user help."""
-    parser = argparse.ArgumentParser(description='Compare HLA alleles called by phlat, opitype, and clincal data if available.')
+    parser = argparse.ArgumentParser(description='Compare HLA alleles called by hlahd, phlat, opitype, and clincal data if available.')
 
     parser.add_argument('-WB', help='The path to the gcp_immuno folder of the trial you wish to run the script on, defined as WORKING_BASE in envs.txt')
     parser.add_argument('-f', "--fin_results", default="final_results", help="Name of the final results folder in gcp immuno")
@@ -16,6 +17,8 @@ def parse_arguments():
     parser.add_argument("--optitype_t", help="File path for optitype tumor calls")
     parser.add_argument("--phlat_n", help="File path for phlat normal calls")
     parser.add_argument("--phlat_t", help="File path for phlat tumor calls")
+    parser.add_argument("--hlahd_n", help="File path for hlahd normal calls")
+    parser.add_argument("--hlahd_t", help="File path for hla tumor calls")
     parser.add_argument("--clinical", help="File path for the clinical_calls.txt")
     parser.add_argument("--o", help="Output folder")
 
@@ -159,27 +162,174 @@ def sort_hla_pairs(df):
     ]
     
     # For each row, sort each pair of columns alphabetically
-    for idx, row in sorted_df.iterrows():
-        for col1, col2 in pairs:
-            # Skip if either column doesn't exist in this row
-            if col1 not in row.index or col2 not in row.index:
+    def sort_row(row):
+        row = row.copy()
+        for c1, c2 in pairs:
+            if c1 not in row.index or c2 not in row.index:
                 continue
-                
-            # Skip if both values are missing
-            if pd.isna(row[col1]) and pd.isna(row[col2]):
-                continue
-            
-            # If only one value exists, keep it where it is
-            if pd.isna(row[col1]) or pd.isna(row[col2]):
-                continue
-                
-            # If both values exist, sort them alphabetically
-            if row[col1] > row[col2]:  # Swap if first is alphabetically greater
-                sorted_df.at[idx, col1], sorted_df.at[idx, col2] = row[col2], row[col1]
-    
-        return sorted_df
 
-        
+            v1, v2 = row[c1], row[c2]
+            if pd.isna(v1) or pd.isna(v2):
+                continue
+
+            # compare as strings
+            if str(v1) > str(v2):
+                row[c1], row[c2] = v2, v1
+        return row
+
+    return df.apply(sort_row, axis=1)
+
+
+def _two_field(allele: str) -> str:
+    """
+    Normalize to 2-field allele resolution:
+      HLA-A*02:01:01 -> A*02:01
+      HLA-DRB1*11:01:01 -> DRB1*11:01
+      DRB3*02:96 -> DRB3*02:96 (already 2-field-ish)
+    """
+    allele = allele.strip()
+    allele = allele.replace("HLA-", "").replace("HLA_", "")
+
+    # If it looks like LOCUS*xx:yy(:...) keep only first two fields after '*'
+    if "*" in allele:
+        loc, rest = allele.split("*", 1)
+        parts = rest.split(":")
+        if len(parts) >= 2:
+            return f"{loc}*{parts[0]}:{parts[1]}"
+        else:
+            return f"{loc}*{rest}"
+    return allele
+
+
+def process_hlahd(input_file, sample_type):
+    """
+    Parse HLA-HD *_DNA_final.result.txt format:
+      locus <TAB> allele1 <TAB> allele2 <TAB> ...
+    No header. Missing calls can be '-' or 'Not typed'.
+    Some loci may have >2 allele tokens (e.g., E).
+    """
+    # loci you actually want to harmonize with your downstream columns
+    # (add/remove here as needed)
+    loci_keep = {"A", "B", "C", "DRB1", "DRB3", "DRB4", "DRB5", "DQA1", "DQB1", "DPA1", "DPB1"}
+
+    rows = []
+    with open(input_file, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if "Couldn't read result file" in line:
+                # keep going; file may still have usable rows above
+                continue
+
+            parts = line.split("\t")
+            if len(parts) < 2:
+                continue
+
+            locus = parts[0].strip()
+            if locus not in loci_keep:
+                continue
+
+            allele_tokens = [p.strip() for p in parts[1:] if p.strip()]
+
+            # filter missing tokens
+            allele_tokens = [
+                a for a in allele_tokens
+                if a not in {"-", "Not typed", "Not typed\tNot typed"} and a.lower() != "not typed"
+            ]
+
+            # normalize + de-dup preserving order
+            alleles_norm = []
+            for a in allele_tokens:
+                norm = _two_field(a)
+                if norm not in alleles_norm:
+                    alleles_norm.append(norm)
+
+            rows.append((locus, alleles_norm))
+
+    out = pd.DataFrame()
+
+    for locus, alleles in rows:
+        # map locus to your column naming scheme:
+        # A/B/C -> HLA_A/HLA_B/HLA_C ; class II loci keep as-is
+        if locus in {"A", "B", "C"}:
+            base = f"HLA_{locus}"
+        else:
+            base = locus  # e.g. DQA1, DRB1, ...
+
+        # take up to first 2 alleles (your rest of script expects pairs)
+        for i, a in enumerate(alleles[:2], start=1):
+            out.at[0, f"{base}-{i}"] = a
+
+    out["Tool"] = ["hlahd"]
+    out["sample_type"] = [sample_type]
+    return out
+
+
+def find_discrepancies(df):
+    """
+    For each (sample_type, locus), collapses each tool's allele slots into
+    a sorted tuple (order-independent), then flags loci where tools disagree.
+    Returns one row per (sample_type, locus, Tool) for loci with disagreement,
+    so it's easy to see exactly which tool called what.
+    """
+    allele_cols = [c for c in df.columns if re.match(r'.+-\d+$', c)]
+    tool_order = list(df['Tool'].unique())  # preserve the table's row order (optitype, phlat, hlahd, clinical, ...)
+
+    long = (df.melt(id_vars=['Tool', 'sample_type'], value_vars=allele_cols,
+                     var_name='column', value_name='allele')
+              .dropna(subset=['allele']))
+    long['locus'] = long['column'].str.rsplit('-', n=1).str[0]
+
+    calls = (long.groupby(['sample_type', 'locus', 'Tool'])['allele']
+                  .apply(lambda alleles: tuple(sorted(set(alleles))))
+                  .reset_index(name='alleles'))
+    calls['Tool'] = pd.Categorical(calls['Tool'], categories=tool_order, ordered=True)
+
+    n_distinct_calls = calls.groupby(['sample_type', 'locus'])['alleles'].transform('nunique')
+    return calls[n_distinct_calls > 1].sort_values(['sample_type', 'locus', 'Tool']).reset_index(drop=True)
+
+
+def print_discrepancies(discrepancy_df):
+    print("\n" + "#" * 80)
+    print("HLA ALLELE DISCREPANCIES")
+    print("#" * 80)
+
+    if discrepancy_df.empty:
+        print("No discrepancies found between tools.")
+        return
+
+    for (sample_type, locus), group in discrepancy_df.groupby(['sample_type', 'locus']):
+        print(f"\n[{sample_type}] {locus}")
+        for tool, alleles in zip(group['Tool'], group['alleles']):
+            print(f"  {tool}: {', '.join(alleles)}")
+
+
+def get_consensus_alleles(consensus_file):
+    """
+    Parses consensus_calls.txt and returns ClassI and ClassII alleles.
+    ClassI starts with 'HLA-', ClassII starts with 'D'.
+    """
+    class_i_alleles = []
+    class_ii_alleles = []
+    
+    try:
+        with open(consensus_file, 'r') as file:
+            content = file.read().strip()
+            alleles = content.split(',')
+            
+            for allele in alleles:
+                allele = allele.strip()
+                if allele.startswith('HLA-'):
+                    class_i_alleles.append(allele)
+                elif allele.startswith('D'):
+                    class_ii_alleles.append(allele)
+    except FileNotFoundError:
+        print(f"[WARN] Consensus file not found: {consensus_file}")
+    
+    return class_i_alleles, class_ii_alleles
+
+
 def main():
     args = parse_arguments()
     
@@ -190,12 +340,29 @@ def main():
         optitype_tumor = process_optitype(f"{hla_typing}/optitype_tumor_result.tsv", "tumor")
         phlat_normal = process_phlat(f"{hla_typing}/phlat_normal_HLA.sum", "normal")
         phlat_tumor = process_phlat(f"{hla_typing}/phlat_tumor_HLA.sum", "tumor")
-        
-        if os.path.isfile(f"{hla_typing}/clinical_calls.txt"):
-            clincal = process_clinical(f"{hla_typing}/clinical_calls.txt", "normal")
-            df = pd.concat([optitype_normal, optitype_tumor, phlat_normal, phlat_tumor, clincal])
+        list_df = [optitype_normal, optitype_tumor, phlat_normal, phlat_tumor]
+
+        # ---- HLA-HD (optional in older cases) ----
+        hlahd_n_path = f"{hla_typing}/hlahd_normal_DNA_final.result.txt"
+        hlahd_t_path = f"{hla_typing}/hlahd_tumor_DNA_final.result.txt"
+
+        if os.path.isfile(hlahd_n_path):
+            list_df.append(process_hlahd(hlahd_n_path, "normal"))
         else:
-            df = pd.concat([optitype_normal, optitype_tumor, phlat_normal, phlat_tumor])
+            print(f"[WARN] Missing HLA-HD normal file, skipping: {hlahd_n_path}")
+
+        if os.path.isfile(hlahd_t_path):
+            list_df.append(process_hlahd(hlahd_t_path, "tumor"))
+        else:
+            print(f"[WARN] Missing HLA-HD tumor file, skipping: {hlahd_t_path}")
+
+        # ---- clinical (optional) ----
+        clinical_path = f"{hla_typing}/clinical_calls.txt"
+        if os.path.isfile(clinical_path):
+            list_df.append(process_clinical(clinical_path, "normal"))
+            
+        df = pd.concat(list_df, ignore_index=True)
+
     else:
         list_df = []
         if os.path.isfile(args.optitype_n):
@@ -210,8 +377,14 @@ def main():
         if os.path.isfile(args.phlat_t):
             phlat_tumor = process_phlat(args.phlat_t, "tumor")
             list_df.append(phlat_tumor)
-        if os.path.isfile(args.phlat_t):
-            clinical = process_clinical(args.clinical)
+        if os.path.isfile(args.hlahd_n):
+            hlahd_normal = process_hlahd(args.hlahd_n, "normal")
+            list_df.append(hlahd_normal)
+        if os.path.isfile(args.hlahd_t):
+            hlahd_tumor = process_hlahd(args.hlahd_t, "tumor")
+            list_df.append(hlahd_tumor)
+        if os.path.isfile(args.clinical):
+            clinical = process_clinical(args.clinical, "normal")
             list_df.append(clinical)
         
         df = pd.concat(list_df)
@@ -224,6 +397,25 @@ def main():
     
     sorted_df = sort_hla_pairs(df)
     print(sorted_df)
+
+    print_discrepancies(find_discrepancies(sorted_df))
+
+    # ---- Print consensus alleles if available ----
+    if args.WB:
+        consensus_path = f"{args.WB}/{args.fin_results}/hla_typing/consensus_calls.txt"
+        class_i_alleles, class_ii_alleles = get_consensus_alleles(consensus_path)
+        
+        print("\n" + "#" * 80)
+        print("pVAC CONSENSUS ALLELES")
+        print("#" * 80)
+        
+        if class_i_alleles:
+            class_i_str = "ClassI consensus alleles used by pVAC predictions: " + ", ".join(class_i_alleles)
+            print(class_i_str)
+        
+        if class_ii_alleles:
+            class_ii_str = "ClassII consensus alleles used by pVAC predictions: " + ", ".join(class_ii_alleles)
+            print(class_ii_str)
     
     if args.WB:
         sorted_df.to_csv(f"{args.WB}/../manual_review/hla_comparison.tsv", sep='\t', index=False)
