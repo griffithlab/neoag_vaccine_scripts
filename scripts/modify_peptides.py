@@ -77,7 +77,7 @@ def main():
 
     max_length = int(args.n)
 
-    peptides = pd.read_csv(args.m, names=["Name", "Sequence"], header=None)
+    peptides = pd.read_csv(args.m, names=["Name", "Sequence"], header=None, index_col=False)
     peptides = peptides[1:]
     peptides = assign_unique_numbers(peptides, "Name")
 
