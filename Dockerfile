@@ -15,6 +15,7 @@ ADD scripts/color_peptides51mer.py /opt/scripts/color_peptides51mer.py
 ADD scripts/setup_review.py /opt/scripts/setup_review.py
 ADD scripts/modify_peptides.py /opt/scripts/modify_peptides.py
 ADD scripts/hla_comparison.py /opt/scripts/hla_comparison.py
+ADD scripts/run_manual_review.sh /opt/scripts/run_manual_review.sh
 
 RUN chmod +r /opt/scripts/*
 
