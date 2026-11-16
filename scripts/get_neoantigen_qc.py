@@ -31,6 +31,7 @@ def parse_arguments():
     parser.add_argument("--strand_check", help="File path for strandness check")
     parser.add_argument("--yaml", help="File path for the pipeline YAML file", required=True)
     parser.add_argument("--fin_variants", help="File path for the final variants file")
+    parser.add_argument("--o", help="Output folder")
 
     return parser.parse_args()
 
@@ -369,7 +370,14 @@ def main():
     final_variants = args.fin_variants if args.fin_variants else os.path.join(WB, final_result, "variants.final.annotated.tsv")
         
     # create a text file to store results
-    qc_file = open(args.WB + '/../manual_review/qc_file.txt', 'w') if args.WB else open('qc_file.txt', 'w')
+    # Output location: --o if given, otherwise WB/../manual_review, otherwise the current folder
+    if args.o:
+        out_dir = args.o
+    elif args.WB:
+        out_dir = os.path.join(args.WB, '..', 'manual_review')
+    else:
+        out_dir = '.'
+    qc_file = open(os.path.join(out_dir, 'qc_file.txt'), 'w')
        
 
     print()
@@ -391,6 +399,7 @@ def main():
     qc_file.write(check_strand(strandness_check,  yaml_file))
     qc_file.write(get_variant_count(final_variants))
     qc_file.write("REMEMBER to visually inspect end bias plot (usually found in qc/tumor_rna/rna_metrics.pdf)")
+    qc_file.close()
 
     print()
     print("REMEMBER to visually inspect end bias plot (usually found in qc/tumor_rna/rna_metrics.pdf)")

@@ -1,6 +1,7 @@
 import argparse
 import csv
 import numpy as np
+import os
 import pandas as pd
 import sys
 
@@ -40,6 +41,7 @@ def parse_arguments():
     parser.add_argument("--somalier", help="file path for Somalier results for sample tumor/normal sample relatedness (concordance.somalier.pairs.tsv)")
     parser.add_argument("--contam_n", help="file path for VerifyBamID results for contamination the normal sample")
     parser.add_argument("--contam_t", help="file path for VerifyBamID results for contamination the tumor dna sample")
+    parser.add_argument("--o", help="Output folder")
 
     return(parser.parse_args())
 
@@ -50,7 +52,7 @@ def reshape_quality_thresholds(fda_quality_thresholds):
         # Split 'Column1' into two columns based on "("
     fda_quality_thresholds[['Criteria_1', 'File']] = fda_quality_thresholds.Criteria.str.split('(', expand=True)
     # Remove parentheses from the 'Column1' values
-    fda_quality_thresholds['File'] = fda_quality_thresholds['File'].str.replace(r'\(|\)', '')
+    fda_quality_thresholds['File'] = fda_quality_thresholds['File'].str.replace(r'\(|\)', '', regex=True)
     # Split ro
     fda_quality_thresholds = fda_quality_thresholds.drop('File', axis=1) \
             .join(fda_quality_thresholds['File'] \
@@ -97,10 +99,14 @@ def get_values(qc, normal_dna, tumor_dna, tumor_rna, unalgined_normal_dna, unalg
     qc = qc.astype({'Value':'float'})
 
 
-    # get total numer of reads
-    # form Col[Ssample Name] == Total Number of Reads, get col[jlf-100-042-normal-exome]
-    # THIS DOES NOT WORK ALL THE TIME
-    # CHANGE TO JUST GRAB FROM THE FIRST COLUMN
+    # get total number of reads
+    # NOTE: TOTAL_READS is reported as the number of READ PAIRS, not individual reads (R1 + R2).
+    # This was a deliberate decision, even though Picard's TOTAL_READS counts individual reads.
+    # The value comes from the "Total Number of Reads" row of the unaligned table1.csv, which has
+    # one column per FASTQ file (e.g. Lane1_R1, Lane1_R2, Lane2_R1, Lane2_R2). R1 and R2 of a lane
+    # have the same count, so the unique counts are summed to count each lane's pairs once.
+    # The aligned tables' "Total Read Count" is R1 + R2, i.e. 2x this value, so it is NOT used here.
+    # Caveat: if two lanes happen to have identical read counts, set() would drop one of them.
     total_number_reads_normal = unalgined_normal_dna.loc[unalgined_normal_dna["Sample Name"] == "Total Number of Reads"].values[0]
     total_number_reads_normal = np.delete(total_number_reads_normal, 0)
     total_number_reads_normal_uniq = list(set(total_number_reads_normal))
@@ -155,6 +161,17 @@ def get_values(qc, normal_dna, tumor_dna, tumor_rna, unalgined_normal_dna, unalg
     return(qc)
 
 
+# ---- PERCENT TO FRACTION ---------------------------------------------------
+# The FDA tables report PERCENT_DUPLICATION and PCT_PF_READS_ALIGNED as
+# percentages (e.g. 54.13), while the other PCT_ metrics are fractions (0.541).
+# Convert to a fraction so every value in the report uses the same units.
+def percent_to_fraction(value, criteria):
+    # A missing metric (NaN) is passed through and will be marked FAIL
+    if pd.notna(value) and not 0 <= value <= 100:
+        raise ValueError(f"{criteria} value {value} is not a percentage between 0 and 100")
+    return value / 100
+
+
 # ---- EVALUATE THRESHOLDS ---------------------------------------------------
 # Evaluates the value of Criteria and adds PASS or FAIL status to dataframe
 # Values of FDA thresholds are currently hard coded 
@@ -205,15 +222,14 @@ def evaluate_thresholds(qc):
 
             qc.at[index, "Value"] = round(row["Value"], 3)
 
-        # fix to be decimal and not percentage
         if row["Criteria"] == "PERCENT_DUPLICATION":
-            if row["Value"]/40 < 1:
+            value = percent_to_fraction(row["Value"], row["Criteria"])
+            if value < 0.40:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
 
-            qc.at[index, "Value"] = qc.at[index, "Value"]/100
-            qc.at[index, "Value"] = round(row["Value"], 3)
+            qc.at[index, "Value"] = round(value, 3)
 
 
         if (row["File"] == 'normal DNA') and (row["Criteria"] == 'MEAN_TARGET_COVERAGE'):
@@ -246,7 +262,7 @@ def evaluate_thresholds(qc):
             qc.at[index, "Value"] = round(row["Value"], 3)
         
         if row["Criteria"] == "MEAN_INSERT_SIZE":
-            if row["Value"] >= 125 or row["Value"] <= 300:
+            if 125 <= row["Value"] <= 300:
                 qc.at[index, "Pass"] = "PASS"
             else:
                 qc.at[index, "Pass"] = "FAIL"
@@ -267,21 +283,20 @@ def evaluate_thresholds(qc):
 
             qc.at[index, "Value"] = round(row["Value"], 3)
 
-        # fix to be decimal and not percentage
         if row["Criteria"] == "PCT_PF_READS_ALIGNED":
+            value = percent_to_fraction(row["Value"], row["Criteria"])
             if row["File"] != "tumor RNA":
-                if row["Value"]/95 > 1:
+                if value > 0.95:
                     qc.at[index, "Pass"] = "PASS"
                 else:
-                    qc.at[index, "Pass"] = "FAIL" 
+                    qc.at[index, "Pass"] = "FAIL"
             else:
-                if row["Value"]/85 > 1:
+                if value > 0.85:
                     qc.at[index, "Pass"] = "PASS"
                 else:
-                    qc.at[index, "Pass"] = "FAIL" 
+                    qc.at[index, "Pass"] = "FAIL"
 
-            qc.at[index, "Value"] = qc.at[index, "Value"]/100
-            qc.at[index, "Value"] = round(row["Value"], 3)
+            qc.at[index, "Value"] = round(value, 3)
                 
         if row["Criteria"] == "Genotype Concordance":
             if row["Value"]/0.95 > 1:
@@ -401,10 +416,14 @@ def main():
     qc.loc[total_reads_mask, 'Value'] = qc.loc[total_reads_mask, 'Value'].apply(lambda x: '{:,.0f}'.format(x))
     
 
-    if args.WB:
-        qc.to_csv(args.WB +  '/../manual_review/fda_quality_thresholds_report.tsv', sep="\t", index=False)
+    # Output location: --o if given, otherwise WB/../manual_review, otherwise the current folder
+    if args.o:
+        out_dir = args.o
+    elif args.WB:
+        out_dir = os.path.join(args.WB, '..', 'manual_review')
     else:
-        qc.to_csv('fda_quality_thresholds_report.tsv', sep="\t", index=False)
+        out_dir = '.'
+    qc.to_csv(os.path.join(out_dir, 'fda_quality_thresholds_report.tsv'), sep="\t", index=False)
     
 
     print(qc)

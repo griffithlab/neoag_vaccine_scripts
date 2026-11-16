@@ -3,6 +3,7 @@ import csv
 import pandas as pd
 import os.path
 import re
+import sys
 
 # python3 scripts/hla_comparison.py -WB "/Users/evelynschmidt/Bioinformatics_tools/neoag_vaccine_scripts/test_data/gcp_immuno"
 
@@ -365,29 +366,33 @@ def main():
 
     else:
         list_df = []
-        if os.path.isfile(args.optitype_n):
+        # Each flag is optional, so skip any that were not given (None)
+        if args.optitype_n and os.path.isfile(args.optitype_n):
             optitype_normal = process_optitype(args.optitype_n, "normal")
             list_df.append(optitype_normal)
-        if os.path.isfile(args.optitype_t):
+        if args.optitype_t and os.path.isfile(args.optitype_t):
             optitype_tumor = process_optitype(args.optitype_t, "tumor")
             list_df.append(optitype_tumor)
-        if os.path.isfile(args.phlat_n):
+        if args.phlat_n and os.path.isfile(args.phlat_n):
             phlat_normal = process_phlat(args.phlat_n, "normal")
             list_df.append(phlat_normal)
-        if os.path.isfile(args.phlat_t):
+        if args.phlat_t and os.path.isfile(args.phlat_t):
             phlat_tumor = process_phlat(args.phlat_t, "tumor")
             list_df.append(phlat_tumor)
-        if os.path.isfile(args.hlahd_n):
+        if args.hlahd_n and os.path.isfile(args.hlahd_n):
             hlahd_normal = process_hlahd(args.hlahd_n, "normal")
             list_df.append(hlahd_normal)
-        if os.path.isfile(args.hlahd_t):
+        if args.hlahd_t and os.path.isfile(args.hlahd_t):
             hlahd_tumor = process_hlahd(args.hlahd_t, "tumor")
             list_df.append(hlahd_tumor)
-        if os.path.isfile(args.clinical):
+        if args.clinical and os.path.isfile(args.clinical):
             clinical = process_clinical(args.clinical, "normal")
             list_df.append(clinical)
-        
-        df = pd.concat(list_df)
+
+        if not list_df:
+            sys.exit("No HLA files found. Provide -WB or at least one of the HLA file flags.")
+
+        df = pd.concat(list_df, ignore_index=True)
             
     first_column = df.pop('sample_type') 
     df.insert(0, 'sample_type', first_column) 
@@ -417,12 +422,14 @@ def main():
             class_ii_str = "ClassII consensus alleles used by pVAC predictions: " + ", ".join(class_ii_alleles)
             print(class_ii_str)
     
-    if args.WB:
-        sorted_df.to_csv(f"{args.WB}/../manual_review/hla_comparison.tsv", sep='\t', index=False)
+    # Output location: --o if given, otherwise WB/../manual_review, otherwise the current folder
     if args.o:
-        sorted_df.to_csv(f"{args.o}/hla_comparison.tsv", sep='\t', index=False)
+        out_dir = args.o
+    elif args.WB:
+        out_dir = os.path.join(args.WB, '..', 'manual_review')
     else:
-        sorted_df.to_csv("hla_comparison.tsv", sep='\t', index=False)
+        out_dir = '.'
+    sorted_df.to_csv(os.path.join(out_dir, 'hla_comparison.tsv'), sep='\t', index=False)
     
 
 if __name__ == "__main__":
